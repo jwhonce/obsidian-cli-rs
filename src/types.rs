@@ -35,13 +35,23 @@ pub struct QueryResult {
     pub value: Option<Value>,
 }
 
+/// Represents an Obsidian vault with its configuration and metadata.
+/// 
+/// This struct contains all the necessary information to operate on an Obsidian vault,
+/// including the vault path, configuration settings, and operational parameters.
 #[derive(Debug, Clone)]
-pub struct State {
-    pub vault: PathBuf,
+pub struct Vault {
+    /// Path to the Obsidian vault directory
+    pub path: PathBuf,
+    /// List of directory patterns to exclude from operations
     pub blacklist: Vec<String>,
+    /// Editor command to use for editing files
     pub editor: String,
+    /// Key used for unique identifiers in frontmatter
     pub ident_key: String,
+    /// Template string for journal file paths
     pub journal_template: String,
+    /// Whether to enable verbose output
     pub verbose: bool,
 }
 
@@ -56,6 +66,10 @@ pub struct TemplateVars {
     pub weekday_abbr: String,
 }
 
+/// Information about an Obsidian vault including statistics and configuration.
+/// 
+/// This struct is used to provide comprehensive information about a vault,
+/// including file counts, sizes, and configuration details.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VaultInfo {
     pub blacklist: Vec<String>,

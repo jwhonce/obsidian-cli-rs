@@ -2,19 +2,19 @@
 //! Comprehensive testing of query command filtering, output formats, and edge cases
 
 use obsidian_cli::commands::query;
-use obsidian_cli::types::{OutputStyle, State};
+use obsidian_cli::types::{OutputStyle, Vault};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
 
-// Helper function to create a test state with query functionality
-fn create_test_state_for_query(temp_dir: &TempDir) -> State {
+// Helper function to create a test vault with query functionality
+fn create_test_vault_for_query(temp_dir: &TempDir) -> Vault {
     let vault_path = temp_dir.path();
     fs::create_dir_all(vault_path.join(".obsidian")).unwrap();
 
-    State {
-        vault: vault_path.to_path_buf(),
+    Vault {
+        path: vault_path.to_path_buf(),
         blacklist: vec![".obsidian".to_string(), "blacklisted".to_string()],
         editor: "true".to_string(),
         ident_key: "uid".to_string(),
@@ -76,7 +76,7 @@ mod advanced_query_engine_tests {
     #[tokio::test]
     async fn test_query_conflicting_options_error() {
         let temp_dir = TempDir::new().unwrap();
-        let _state = create_test_state_for_query(&temp_dir);
+        let _vault = create_test_vault_for_query(&temp_dir);
 
         let options = query::QueryOptions {
             key: "title",
@@ -97,8 +97,8 @@ mod advanced_query_engine_tests {
     #[tokio::test]
     async fn test_query_verbose_output() {
         let temp_dir = TempDir::new().unwrap();
-        let mut state = create_test_state_for_query(&temp_dir);
-        state.verbose = true; // Enable verbose mode
+        let mut vault = create_test_vault_for_query(&temp_dir);
+        vault.verbose = true; // Enable verbose mode
 
         create_complex_test_note(
             temp_dir.path(),
@@ -117,15 +117,15 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_verbose_with_contains() {
         let temp_dir = TempDir::new().unwrap();
-        let mut state = create_test_state_for_query(&temp_dir);
-        state.verbose = true;
+        let mut vault = create_test_vault_for_query(&temp_dir);
+        vault.verbose = true;
 
         let options = query::QueryOptions {
             key: "description",
@@ -137,15 +137,15 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_verbose_with_exists() {
         let temp_dir = TempDir::new().unwrap();
-        let mut state = create_test_state_for_query(&temp_dir);
-        state.verbose = true;
+        let mut vault = create_test_vault_for_query(&temp_dir);
+        vault.verbose = true;
 
         let options = query::QueryOptions {
             key: "tags",
@@ -157,15 +157,15 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_verbose_with_missing() {
         let temp_dir = TempDir::new().unwrap();
-        let mut state = create_test_state_for_query(&temp_dir);
-        state.verbose = true;
+        let mut vault = create_test_vault_for_query(&temp_dir);
+        vault.verbose = true;
 
         let options = query::QueryOptions {
             key: "nonexistent",
@@ -177,7 +177,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
@@ -186,7 +186,7 @@ mod advanced_query_engine_tests {
     #[tokio::test]
     async fn test_query_string_value_matching() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -205,14 +205,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_number_value_matching() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -231,14 +231,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_boolean_value_matching() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -257,14 +257,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_null_value_matching() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -283,7 +283,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
@@ -292,7 +292,7 @@ mod advanced_query_engine_tests {
     #[tokio::test]
     async fn test_query_contains_string() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -311,14 +311,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_contains_array() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -337,14 +337,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_contains_nested_array() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -363,14 +363,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_contains_object_fallback() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -389,7 +389,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
@@ -398,7 +398,7 @@ mod advanced_query_engine_tests {
     #[tokio::test]
     async fn test_query_output_style_path() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -417,14 +417,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_output_style_title() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -443,14 +443,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_output_style_title_fallback() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         // Create note without title - should fallback to filename
         create_complex_test_note(
@@ -470,14 +470,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_output_style_table() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -504,14 +504,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_output_style_json() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -535,14 +535,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_count_option() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -568,7 +568,7 @@ mod advanced_query_engine_tests {
             count: true,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
@@ -577,7 +577,7 @@ mod advanced_query_engine_tests {
     #[tokio::test]
     async fn test_query_empty_results() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         // Create note that won't match the query
         create_complex_test_note(
@@ -597,14 +597,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_empty_results_table_style() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         let options = query::QueryOptions {
             key: "nonexistent_key",
@@ -616,14 +616,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_blacklisted_files() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         // Create file in blacklisted directory
         fs::create_dir_all(temp_dir.path().join("blacklisted")).unwrap();
@@ -652,7 +652,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
         // The blacklisted file should be ignored
     }
@@ -660,7 +660,7 @@ mod advanced_query_engine_tests {
     #[tokio::test]
     async fn test_query_non_markdown_files() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         // Create non-markdown files that should be ignored
         fs::write(temp_dir.path().join("test.txt"), "title: Test\nContent").unwrap();
@@ -684,15 +684,15 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_malformed_frontmatter() {
         let temp_dir = TempDir::new().unwrap();
-        let mut state = create_test_state_for_query(&temp_dir);
-        state.verbose = true; // Test verbose error handling
+        let mut vault = create_test_vault_for_query(&temp_dir);
+        vault.verbose = true; // Test verbose error handling
 
         // Create file with malformed frontmatter
         let malformed_content = "---\ntitle: Unclosed quote\ndescription: \"This quote is never closed\nstatus: broken\n---\nContent";
@@ -716,14 +716,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_exists_filter() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -749,14 +749,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_missing_filter() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -782,14 +782,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_unicode_content() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         create_complex_test_note(
             temp_dir.path(),
@@ -812,14 +812,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_large_dataset() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         // Create many test files to test performance and correctness
         for i in 0..50 {
@@ -846,14 +846,14 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_nested_directories() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_query(&temp_dir);
+        let vault = create_test_vault_for_query(&temp_dir);
 
         // Create nested directory structure
         fs::create_dir_all(temp_dir.path().join("projects/rust/advanced")).unwrap();
@@ -890,7 +890,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 }

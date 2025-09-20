@@ -1,15 +1,15 @@
 use crate::errors::Result;
 use crate::frontmatter;
-use crate::types::State;
+use crate::types::Vault;
 use crate::utils::launch_editor;
 use chrono::Utc;
 use serde_json::Value;
 use std::path::Path;
 
-pub async fn execute(state: &State, page_or_path: &Path) -> Result<()> {
-    let file_path = crate::resolve_page_or_path!(state, page_or_path)?;
+pub async fn execute(vault: &Vault, page_or_path: &Path) -> Result<()> {
+    let file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
 
-    launch_editor(&state.editor, &file_path)?;
+    launch_editor(&vault.editor, &file_path)?;
 
     // Update the modified timestamp in frontmatter
     frontmatter::update_frontmatter(

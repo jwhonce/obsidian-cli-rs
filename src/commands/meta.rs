@@ -1,18 +1,18 @@
 use crate::errors::Result;
 use crate::frontmatter;
-use crate::types::State;
+use crate::types::Vault;
 use chrono::Utc;
 use colored::*;
 use serde_json::Value;
 use std::path::Path;
 
 pub async fn execute(
-    state: &State,
+    vault: &Vault,
     page_or_path: &Path,
     key: Option<&str>,
     value: Option<&str>,
 ) -> Result<()> {
-    let file_path = crate::resolve_page_or_path!(state, page_or_path)?;
+    let file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
     let (frontmatter, _content) = frontmatter::parse_file(&file_path)?;
 
     match (key, value) {
@@ -48,7 +48,7 @@ pub async fn execute(
             let new_value = parse_value(v);
             frontmatter::update_frontmatter(&file_path, k, new_value)?;
 
-            if state.verbose {
+            if vault.verbose {
                 println!(
                     "Updated frontmatter metadata {{ '{}': '{}', 'modified': '{}' }} in {}",
                     k,

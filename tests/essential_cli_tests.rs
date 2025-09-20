@@ -1,5 +1,5 @@
 //! Essential CLI tests - CI safe, focused on core CLI orchestration
-//! Tests CLI argument parsing, config merging, state construction, and command dispatch
+//! Tests CLI argument parsing, config merging, vault construction, and command dispatch
 
 use clap::Parser;
 use obsidian_cli::cli::{Cli, OutputStyleArg};
@@ -472,14 +472,14 @@ mod essential_cli_tests {
         // Test CLI parsing for serve command (should succeed without hanging)
         let _cli = Cli::try_parse_from(args).unwrap();
 
-        // Test that we can create the State object (prerequisites for serve)
+        // Test that we can create the Vault object (prerequisites for serve)
         use obsidian_cli::config::Config;
-        use obsidian_cli::types::State;
+        use obsidian_cli::types::Vault;
 
         let config = Config::default();
         let editor = config.get_editor();
-        let state = State {
-            vault: vault_path.to_path_buf(),
+        let vault = Vault {
+            path: vault_path.to_path_buf(),
             blacklist: config.blacklist,
             editor,
             ident_key: config.ident_key,
@@ -487,13 +487,13 @@ mod essential_cli_tests {
             verbose: false,
         };
 
-        // Verify State creation succeeds
-        assert!(state.vault.exists());
-        assert!(!state.blacklist.is_empty());
+        // Verify Vault creation succeeds
+        assert!(vault.path.exists());
+        assert!(!vault.blacklist.is_empty());
 
         // Test that we can create MCP server instance (without running it)
         use obsidian_cli::mcp_server::ObsidianMcpServer;
-        let _server = ObsidianMcpServer::new(state);
+        let _server = ObsidianMcpServer::new(vault);
 
         // If we reach here, serve command prerequisites are working
         // This tests everything except the actual infinite loop serve execution

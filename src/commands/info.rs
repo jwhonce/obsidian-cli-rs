@@ -1,5 +1,5 @@
 use crate::errors::Result;
-use crate::types::State;
+use crate::types::Vault;
 use crate::utils::get_vault_info;
 use colored::*;
 use comfy_table::{
@@ -8,8 +8,8 @@ use comfy_table::{
 };
 use humansize::{format_size, DECIMAL};
 
-pub async fn execute(state: &State) -> Result<()> {
-    let vault_info = get_vault_info(state)?;
+pub async fn execute(vault: &Vault) -> Result<()> {
+    let vault_info = get_vault_info(vault)?;
 
     println!("{}", "OBSIDIAN VAULT INFORMATION".bold().blue());
     println!();

@@ -310,7 +310,7 @@ The Rust implementation provides significant performance improvements:
 
 ## Architecture
 
-```
+```plaintext
 obsidian-cli-rs/
 ├── src/
 │   ├── main.rs           # Entry point & async runtime
@@ -384,7 +384,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Acknowledgments
 
-- Original Python implementation by [jhonce](https://github.com/jhonce)
+- Original Python implementation by [jwhonce](https://github.com/jwhonce)
 - Built with the amazing Rust ecosystem
 - Inspired by the need for high-performance CLI tools
 

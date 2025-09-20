@@ -1,6 +1,6 @@
 use crate::errors::Result;
 use crate::frontmatter;
-use crate::types::{OutputStyle, QueryResult, State};
+use crate::types::{OutputStyle, QueryResult, Vault};
 use crate::utils::is_path_blacklisted;
 use colored::*;
 use comfy_table::{
@@ -20,7 +20,7 @@ pub struct QueryOptions<'a> {
     pub count: bool,
 }
 
-pub async fn execute(state: &State, options: QueryOptions<'_>) -> Result<()> {
+pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     if options.value.is_some() && options.contains.is_some() {
         eprintln!(
             "{}",
@@ -29,7 +29,7 @@ pub async fn execute(state: &State, options: QueryOptions<'_>) -> Result<()> {
         std::process::exit(1);
     }
 
-    if state.verbose {
+    if vault.verbose {
         println!("Searching for frontmatter key: {}", options.key);
         if let Some(v) = options.value {
             println!("Filtering for exact value: {}", v);
@@ -46,7 +46,7 @@ pub async fn execute(state: &State, options: QueryOptions<'_>) -> Result<()> {
     }
     let mut matches = Vec::new();
 
-    for entry in WalkDir::new(&state.vault)
+    for entry in WalkDir::new(&vault.path)
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -55,10 +55,10 @@ pub async fn execute(state: &State, options: QueryOptions<'_>) -> Result<()> {
             continue;
         }
 
-        let relative_path = match entry.path().strip_prefix(&state.vault) {
+        let relative_path = match entry.path().strip_prefix(&vault.path) {
             Ok(path) => path,
             Err(_) => {
-                if state.verbose {
+                if vault.verbose {
                     eprintln!(
                         "{}",
                         format!(
@@ -73,8 +73,8 @@ pub async fn execute(state: &State, options: QueryOptions<'_>) -> Result<()> {
         };
 
         // Skip files in blacklisted directories
-        if is_path_blacklisted(relative_path, &state.blacklist) {
-            if state.verbose {
+        if is_path_blacklisted(relative_path, &vault.blacklist) {
+            if vault.verbose {
                 println!("Skipping excluded file: {}", relative_path.display());
             }
             continue;
@@ -83,7 +83,7 @@ pub async fn execute(state: &State, options: QueryOptions<'_>) -> Result<()> {
         let (frontmatter, _content) = match frontmatter::parse_file(entry.path()) {
             Ok(parsed) => parsed,
             Err(_) => {
-                if state.verbose {
+                if vault.verbose {
                     eprintln!(
                         "{}",
                         format!("Could not parse frontmatter in {}", relative_path.display())

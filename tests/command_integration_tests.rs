@@ -3,7 +3,7 @@
 
 use obsidian_cli::{
     commands::*,
-    types::{OutputStyle, State},
+    types::{OutputStyle, Vault},
 };
 use std::fs;
 use std::path::Path;
@@ -13,13 +13,13 @@ use tempfile::TempDir;
 mod command_integration_tests {
     use super::*;
 
-    // Helper function to create a test state with mocked environment
-    fn create_test_state(temp_dir: &TempDir) -> State {
+    // Helper function to create a test vault with mocked environment
+    fn create_test_vault(temp_dir: &TempDir) -> Vault {
         // Create .obsidian directory to make it a valid vault
         fs::create_dir_all(temp_dir.path().join(".obsidian")).unwrap();
 
-        State {
-            vault: temp_dir.path().to_path_buf(),
+        Vault {
+            path: temp_dir.path().to_path_buf(),
             blacklist: vec![".obsidian".to_string(), "*.tmp".to_string()],
             editor: "true".to_string(), // Mock editor that always succeeds
             ident_key: "uid".to_string(),
@@ -41,20 +41,20 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_info_command() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create some test files
         create_test_note(temp_dir.path(), "note1", "title: Test Note 1", "Content 1");
         create_test_note(temp_dir.path(), "note2", "title: Test Note 2", "Content 2");
 
-        let result = info::execute(&state).await;
+        let result = info::execute(&vault).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_ls_command() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create test files
         create_test_note(temp_dir.path(), "test1", "title: First Note", "Content");
@@ -66,18 +66,18 @@ mod command_integration_tests {
         );
 
         // Test without dates
-        let result = ls::execute(&state, false).await;
+        let result = ls::execute(&vault, false).await;
         assert!(result.is_ok());
 
         // Test with dates
-        let result = ls::execute(&state, true).await;
+        let result = ls::execute(&vault, true).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_cat_command() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file
         create_test_note(
@@ -90,18 +90,18 @@ mod command_integration_tests {
         let note_path = Path::new("cat-test.md");
 
         // Test without frontmatter
-        let result = cat::execute(&state, note_path, false).await;
+        let result = cat::execute(&vault, note_path, false).await;
         assert!(result.is_ok());
 
         // Test with frontmatter
-        let result = cat::execute(&state, note_path, true).await;
+        let result = cat::execute(&vault, note_path, true).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_cat_command_without_extension() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         create_test_note(
             temp_dir.path(),
@@ -111,19 +111,19 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("no-ext-test"); // No .md extension
-        let result = cat::execute(&state, note_path, false).await;
+        let result = cat::execute(&vault, note_path, false).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_new_command() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         let new_file_path = Path::new("new-test-file");
 
         // Test creating new file
-        let result = new::execute(&state, new_file_path, false).await;
+        let result = new::execute(&vault, new_file_path, false).await;
         assert!(result.is_ok());
         assert!(temp_dir.path().join("new-test-file.md").exists());
     }
@@ -131,7 +131,7 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_new_command_with_force() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         let file_path = Path::new("existing-file");
 
@@ -139,7 +139,7 @@ mod command_integration_tests {
         create_test_note(temp_dir.path(), "existing-file", "", "Existing content");
 
         // Test overwriting with force
-        let result = new::execute(&state, file_path, true).await;
+        let result = new::execute(&vault, file_path, true).await;
         assert!(result.is_ok());
         assert!(temp_dir.path().join("existing-file.md").exists());
     }
@@ -147,7 +147,7 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_add_uid_command() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file without UID
         create_test_note(
@@ -158,7 +158,7 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("no-uid.md");
-        let result = add_uid::execute(&state, note_path, false).await;
+        let result = add_uid::execute(&vault, note_path, false).await;
         assert!(result.is_ok());
 
         // Verify UID was added
@@ -169,7 +169,7 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_add_uid_command_force() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file with existing UID
         create_test_note(
@@ -180,7 +180,7 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("has-uid.md");
-        let result = add_uid::execute(&state, note_path, true).await;
+        let result = add_uid::execute(&vault, note_path, true).await;
         assert!(result.is_ok());
 
         // Verify UID was replaced
@@ -192,7 +192,7 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_edit_command() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file
         create_test_note(
@@ -203,7 +203,7 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("edit-test.md");
-        let result = edit::execute(&state, note_path).await;
+        let result = edit::execute(&vault, note_path).await;
 
         // Since we use "true" as mock editor, it should succeed without error
         assert!(result.is_ok());
@@ -212,7 +212,7 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_find_command() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create test files with searchable content
         create_test_note(
@@ -229,18 +229,18 @@ mod command_integration_tests {
         );
 
         // Test exact search
-        let result = find::execute(&state, "findable-note", true).await;
+        let result = find::execute(&vault, "findable-note", true).await;
         assert!(result.is_ok());
 
         // Test fuzzy search
-        let result = find::execute(&state, "findable", false).await;
+        let result = find::execute(&vault, "findable", false).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_meta_command_list_all() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file with frontmatter
         create_test_note(
@@ -253,14 +253,14 @@ mod command_integration_tests {
         let note_path = Path::new("meta-test.md");
 
         // Test listing all metadata
-        let result = meta::execute(&state, note_path, None, None).await;
+        let result = meta::execute(&vault, note_path, None, None).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_meta_command_get_existing_key() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file with frontmatter
         create_test_note(
@@ -273,14 +273,14 @@ mod command_integration_tests {
         let note_path = Path::new("meta-get.md");
 
         // Test getting existing key
-        let result = meta::execute(&state, note_path, Some("title"), None).await;
+        let result = meta::execute(&vault, note_path, Some("title"), None).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_meta_command_set_key() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file
         create_test_note(
@@ -293,7 +293,7 @@ mod command_integration_tests {
         let note_path = Path::new("meta-set.md");
 
         // Test setting a key
-        let result = meta::execute(&state, note_path, Some("status"), Some("published")).await;
+        let result = meta::execute(&vault, note_path, Some("status"), Some("published")).await;
         assert!(result.is_ok());
 
         // Verify the key was set
@@ -304,7 +304,7 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_query_command_basic() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create test files with different frontmatter
         create_test_note(
@@ -336,14 +336,14 @@ mod command_integration_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_command_exists() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create test files
         create_test_note(
@@ -364,14 +364,14 @@ mod command_integration_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_command_missing() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create test files
         create_test_note(
@@ -392,14 +392,14 @@ mod command_integration_tests {
             count: false,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_query_command_count() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create test files
         create_test_note(
@@ -431,14 +431,14 @@ mod command_integration_tests {
             count: true,
         };
 
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_rm_command_force() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create a test file to remove
         create_test_note(
@@ -454,7 +454,7 @@ mod command_integration_tests {
         assert!(temp_dir.path().join("to-delete.md").exists());
 
         // Test removal with force (to avoid user input)
-        let result = rm::execute(&state, note_path, true).await;
+        let result = rm::execute(&vault, note_path, true).await;
         assert!(result.is_ok());
 
         // Verify file was deleted
@@ -464,12 +464,12 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_journal_command_today() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create Calendar directory structure
         fs::create_dir_all(temp_dir.path().join("Calendar")).unwrap();
 
-        let result = journal::execute(&state, None).await;
+        let result = journal::execute(&vault, None).await;
         assert!(result.is_ok());
 
         // Check that some journal file was created in the Calendar structure
@@ -479,12 +479,12 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_journal_command_specific_date() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create Calendar directory structure
         fs::create_dir_all(temp_dir.path().join("Calendar")).unwrap();
 
-        let result = journal::execute(&state, Some("2023-12-25")).await;
+        let result = journal::execute(&vault, Some("2023-12-25")).await;
         assert!(result.is_ok());
 
         // Check that the specific date structure was created
@@ -494,7 +494,7 @@ mod command_integration_tests {
     #[tokio::test]
     async fn test_nested_directories() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create nested directory structure
         fs::create_dir_all(temp_dir.path().join("Projects/Rust")).unwrap();
@@ -506,18 +506,18 @@ mod command_integration_tests {
         );
 
         // Test cat with nested path
-        let result = cat::execute(&state, Path::new("Projects/Rust/notes.md"), false).await;
+        let result = cat::execute(&vault, Path::new("Projects/Rust/notes.md"), false).await;
         assert!(result.is_ok());
 
         // Test ls should find the nested structure
-        let result = ls::execute(&state, false).await;
+        let result = ls::execute(&vault, false).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_unicode_file_handling() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create file with unicode name and content
         let unicode_name = "测试笔记";
@@ -532,26 +532,26 @@ mod command_integration_tests {
         let note_path = Path::new(&note_filename);
 
         // Test various commands with unicode
-        let result = cat::execute(&state, note_path, true).await;
+        let result = cat::execute(&vault, note_path, true).await;
         assert!(result.is_ok());
 
-        let result = meta::execute(&state, note_path, None, None).await;
+        let result = meta::execute(&vault, note_path, None, None).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_empty_vault_operations() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Test operations on empty vault
-        let result = info::execute(&state).await;
+        let result = info::execute(&vault).await;
         assert!(result.is_ok());
 
-        let result = ls::execute(&state, false).await;
+        let result = ls::execute(&vault, false).await;
         assert!(result.is_ok());
 
-        let result = find::execute(&state, "nonexistent", false).await;
+        let result = find::execute(&vault, "nonexistent", false).await;
         assert!(result.is_ok());
 
         // Query should handle empty vault gracefully
@@ -564,14 +564,14 @@ mod command_integration_tests {
             style: OutputStyle::Table,
             count: false,
         };
-        let result = query::execute(&state, options).await;
+        let result = query::execute(&vault, options).await;
         assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_large_content_handling() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create file with large content
         let large_content = "Large content line.\n".repeat(1000);
@@ -585,10 +585,10 @@ mod command_integration_tests {
         let note_path = Path::new("large-file.md");
 
         // Test commands with large content
-        let result = cat::execute(&state, note_path, false).await;
+        let result = cat::execute(&vault, note_path, false).await;
         assert!(result.is_ok());
 
-        let result = add_uid::execute(&state, note_path, false).await;
+        let result = add_uid::execute(&vault, note_path, false).await;
         assert!(result.is_ok());
     }
 

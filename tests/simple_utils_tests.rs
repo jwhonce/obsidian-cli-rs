@@ -2,7 +2,7 @@
 //! Basic tests for utility functions without complex pattern matching
 
 use chrono::Local;
-use obsidian_cli::{utils::*, State};
+use obsidian_cli::{utils::*, Vault};
 use std::fs;
 use tempfile::TempDir;
 
@@ -10,9 +10,9 @@ use tempfile::TempDir;
 mod simple_utils_tests {
     use super::*;
 
-    fn create_test_state(temp_dir: &TempDir) -> State {
-        State {
-            vault: temp_dir.path().to_path_buf(),
+    fn create_test_vault(temp_dir: &TempDir) -> Vault {
+        Vault {
+            path: temp_dir.path().to_path_buf(),
             blacklist: vec![".obsidian".to_string()],
             editor: "echo".to_string(),
             ident_key: "uid".to_string(),
@@ -191,7 +191,7 @@ mod simple_utils_tests {
     #[test]
     fn test_get_vault_info() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create some test files
         fs::write(temp_dir.path().join("note1.md"), "# Note 1\nContent").unwrap();
@@ -205,7 +205,7 @@ mod simple_utils_tests {
         )
         .unwrap();
 
-        let result = get_vault_info(&state);
+        let result = get_vault_info(&vault);
         assert!(result.is_ok());
 
         let info = result.unwrap();
@@ -218,9 +218,9 @@ mod simple_utils_tests {
     #[test]
     fn test_get_vault_info_empty_vault() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
-        let result = get_vault_info(&state);
+        let result = get_vault_info(&vault);
         assert!(result.is_ok());
 
         let info = result.unwrap();
@@ -278,8 +278,8 @@ mod simple_utils_tests {
         }
 
         // Test vault info with unusual files
-        let state = create_test_state(&temp_dir);
-        let result = get_vault_info(&state);
+        let vault = create_test_vault(&temp_dir);
+        let result = get_vault_info(&vault);
         assert!(result.is_ok());
 
         let info = result.unwrap();

@@ -1,20 +1,20 @@
 use crate::errors::Result;
 use crate::frontmatter;
-use crate::types::State;
+use crate::types::Vault;
 use crate::utils::is_path_blacklisted;
 use walkdir::WalkDir;
 
-pub async fn execute(state: &State, show_dates: bool) -> Result<()> {
+pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
     let mut files = Vec::new();
 
-    for entry in WalkDir::new(&state.vault)
+    for entry in WalkDir::new(&vault.path)
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
     {
         if entry.file_type().is_file() && entry.path().extension().is_some_and(|ext| ext == "md") {
-            if let Ok(relative_path) = entry.path().strip_prefix(&state.vault) {
-                if !is_path_blacklisted(relative_path, &state.blacklist) {
+            if let Ok(relative_path) = entry.path().strip_prefix(&vault.path) {
+                if !is_path_blacklisted(relative_path, &vault.blacklist) {
                     files.push(relative_path.to_path_buf());
                 }
             }
@@ -25,7 +25,7 @@ pub async fn execute(state: &State, show_dates: bool) -> Result<()> {
 
     if show_dates {
         for file in files {
-            let full_path = state.vault.join(&file);
+            let full_path = vault.path.join(&file);
             let (created, modified) = get_file_dates(&full_path);
             println!(
                 "{:<40} created: {} modified: {}",

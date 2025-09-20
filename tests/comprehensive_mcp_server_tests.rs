@@ -2,18 +2,18 @@
 //! Tests the complete JSON-RPC protocol implementation, tool operations, and resource management
 
 use obsidian_cli::mcp_server::*;
-use obsidian_cli::types::State;
+use obsidian_cli::types::Vault;
 use serde_json::json;
 use std::fs;
 use tempfile::TempDir;
 
-// Helper function to create a test state with MCP server
-fn create_test_state_for_mcp(temp_dir: &TempDir) -> State {
+// Helper function to create a test vault with MCP server
+fn create_test_vault_for_mcp(temp_dir: &TempDir) -> Vault {
     let vault_path = temp_dir.path();
     fs::create_dir_all(vault_path.join(".obsidian")).unwrap();
 
-    State {
-        vault: vault_path.to_path_buf(),
+    Vault {
+        path: vault_path.to_path_buf(),
         blacklist: vec![".obsidian".to_string()],
         editor: "true".to_string(), // Safe mock editor
         ident_key: "uid".to_string(),
@@ -50,9 +50,9 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_obsidian_mcp_server_creation() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
+        let vault = create_test_vault_for_mcp(&temp_dir);
 
-        let server = ObsidianMcpServer::new(state.clone());
+        let server = ObsidianMcpServer::new(vault.clone());
 
         // Verify server can be created (test basic functionality instead of private fields)
         let request = JsonRpcRequest {
@@ -69,8 +69,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_request_initialize() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -96,8 +96,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_request_unknown_method() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -123,8 +123,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_tools_list() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -156,8 +156,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_tools_call_missing_params() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -179,8 +179,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_tools_call_missing_tool_name() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -202,8 +202,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_tools_call_unknown_tool() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -230,8 +230,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_create_note_tool_success() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -264,8 +264,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_create_note_tool_missing_filename() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -291,8 +291,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_create_note_tool_with_force() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         // Create initial file
         create_test_note_for_mcp(
@@ -333,8 +333,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_find_notes_tool_success() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         // Create test notes
         create_test_note_for_mcp(
@@ -383,8 +383,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_find_notes_tool_exact_match() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         create_test_note_for_mcp(
             temp_dir.path(),
@@ -435,8 +435,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_find_notes_tool_missing_term() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -464,8 +464,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_get_note_content_tool_success() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         create_test_note_for_mcp(
             temp_dir.path(),
@@ -511,8 +511,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_get_note_content_tool_nonexistent() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -548,8 +548,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_get_vault_info_tool_success() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         // Create some test notes
         create_test_note_for_mcp(temp_dir.path(), "info-note-1", "title: Info 1", "Content");
@@ -585,8 +585,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_resources_list() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -616,8 +616,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_resources_read_success() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         create_test_note_for_mcp(
             temp_dir.path(),
@@ -658,8 +658,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_resources_read_missing_params() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -681,8 +681,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_resources_read_missing_uri() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -704,8 +704,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_resources_read_unknown_uri() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -731,8 +731,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_handle_prompts_list() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -813,8 +813,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_create_note_with_nested_path() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -845,8 +845,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_find_notes_empty_vault() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -880,8 +880,8 @@ mod comprehensive_mcp_server_tests {
     #[tokio::test]
     async fn test_unicode_content_handling() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state_for_mcp(&temp_dir);
-        let server = ObsidianMcpServer::new(state);
+        let vault = create_test_vault_for_mcp(&temp_dir);
+        let server = ObsidianMcpServer::new(vault);
 
         let unicode_content = "测试内容 🎌 ñáéíóú ✨ こんにちは";
 

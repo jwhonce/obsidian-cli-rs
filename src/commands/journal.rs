@@ -1,13 +1,13 @@
 use crate::errors::{ObsidianError, Result};
 use crate::frontmatter;
-use crate::types::State;
+use crate::types::Vault;
 use crate::utils::{format_journal_template, get_template_vars, launch_editor};
 use chrono::{Local, NaiveDate};
 use colored::*;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-pub async fn execute(state: &State, date: Option<&str>) -> Result<()> {
+pub async fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
     let target_date = if let Some(date_str) = date {
         NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
             .map_err(|_| {
@@ -25,15 +25,15 @@ pub async fn execute(state: &State, date: Option<&str>) -> Result<()> {
     };
 
     let template_vars = get_template_vars(target_date);
-    let journal_path_str = format_journal_template(&state.journal_template, &template_vars)?;
+    let journal_path_str = format_journal_template(&vault.journal_template, &template_vars)?;
     let mut page_path = PathBuf::from(journal_path_str);
     page_path.set_extension("md");
 
     // Convert to full path within vault
-    let full_path = state.vault.join(&page_path);
+    let full_path = vault.path.join(&page_path);
 
-    if state.verbose {
-        println!("Using journal template: {}", state.journal_template);
+    if vault.verbose {
+        println!("Using journal template: {}", vault.journal_template);
         println!("Resolved journal path: {}", page_path.display());
         println!("Full journal path: {}", full_path.display());
     }
@@ -50,13 +50,13 @@ pub async fn execute(state: &State, date: Option<&str>) -> Result<()> {
             .and_then(|s| s.to_str())
             .unwrap_or("Journal Entry");
         let mut frontmatter = HashMap::new();
-        frontmatter::add_default_frontmatter(&mut frontmatter, title, &state.ident_key);
+        frontmatter::add_default_frontmatter(&mut frontmatter, title, &vault.ident_key);
 
         let content = format!("# {}\n\n", title);
         let serialized = frontmatter::serialize_with_frontmatter(&frontmatter, &content)?;
         std::fs::write(&full_path, serialized)?;
 
-        if state.verbose {
+        if vault.verbose {
             println!(
                 "{} {}: {}",
                 "Created".green(),
@@ -67,7 +67,7 @@ pub async fn execute(state: &State, date: Option<&str>) -> Result<()> {
     }
 
     // Launch editor
-    launch_editor(&state.editor, &full_path)?;
+    launch_editor(&vault.editor, &full_path)?;
 
     Ok(())
 }

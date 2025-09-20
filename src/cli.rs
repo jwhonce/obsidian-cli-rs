@@ -1,7 +1,7 @@
 use crate::commands::*;
 use crate::config::Config;
 use crate::errors::Result;
-use crate::types::State;
+use crate::types::Vault;
 use anyhow::Context;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -9,13 +9,13 @@ use std::path::PathBuf;
 /// Macro to resolve page_or_path to a file_path for commands that operate on existing files
 ///
 /// Simplifies the common pattern in commands that operate on existing files by
-/// automatically calling resolve_page_path(page_or_path, &state.vault).
+/// automatically calling resolve_page_path(page_or_path, &vault.path).
 ///
-/// Usage: `let file_path = crate::resolve_page_or_path!(state, page_or_path)?;`
+/// Usage: `let file_path = crate::resolve_page_or_path!(vault, page_or_path)?;`
 #[macro_export]
 macro_rules! resolve_page_or_path {
-    ($state:expr, $page_or_path:expr) => {
-        $crate::utils::resolve_page_path($page_or_path, &$state.vault)
+    ($vault:expr, $page_or_path:expr) => {
+        $crate::utils::resolve_page_path($page_or_path, &$vault.path)
     };
 }
 
@@ -171,8 +171,8 @@ impl Cli {
         let blacklist = self.blacklist.unwrap_or_else(|| config.blacklist.clone());
         let editor = self.editor.unwrap_or_else(|| config.get_editor());
 
-        let state = State {
-            vault,
+        let vault = Vault {
+            path: vault,
             blacklist,
             editor,
             ident_key: config.ident_key,
@@ -184,25 +184,25 @@ impl Cli {
             Commands::AddUid {
                 page_or_path,
                 force,
-            } => add_uid::execute(&state, &page_or_path, force).await,
+            } => add_uid::execute(&vault, &page_or_path, force).await,
             Commands::Cat {
                 page_or_path,
                 show_frontmatter,
-            } => cat::execute(&state, &page_or_path, show_frontmatter).await,
-            Commands::Edit { page_or_path } => edit::execute(&state, &page_or_path).await,
-            Commands::Find { page_name, exact } => find::execute(&state, &page_name, exact).await,
-            Commands::Info => info::execute(&state).await,
-            Commands::Journal { date } => journal::execute(&state, date.as_deref()).await,
-            Commands::Ls { date } => ls::execute(&state, date).await,
+            } => cat::execute(&vault, &page_or_path, show_frontmatter).await,
+            Commands::Edit { page_or_path } => edit::execute(&vault, &page_or_path).await,
+            Commands::Find { page_name, exact } => find::execute(&vault, &page_name, exact).await,
+            Commands::Info => info::execute(&vault).await,
+            Commands::Journal { date } => journal::execute(&vault, date.as_deref()).await,
+            Commands::Ls { date } => ls::execute(&vault, date).await,
             Commands::Meta {
                 page_or_path,
                 key,
                 value,
-            } => meta::execute(&state, &page_or_path, key.as_deref(), value.as_deref()).await,
+            } => meta::execute(&vault, &page_or_path, key.as_deref(), value.as_deref()).await,
             Commands::New {
                 page_or_path,
                 force,
-            } => new::execute(&state, &page_or_path, force).await,
+            } => new::execute(&vault, &page_or_path, force).await,
             Commands::Query {
                 key,
                 value,
@@ -221,13 +221,13 @@ impl Cli {
                     style: style.into(),
                     count,
                 };
-                query::execute(&state, options).await
+                query::execute(&vault, options).await
             }
             Commands::Rm {
                 page_or_path,
                 force,
-            } => rm::execute(&state, &page_or_path, force).await,
-            Commands::Serve => serve::execute(&state).await,
+            } => rm::execute(&vault, &page_or_path, force).await,
+            Commands::Serve => serve::execute(&vault).await,
         }
     }
 }

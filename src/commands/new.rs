@@ -1,14 +1,14 @@
 use crate::errors::Result;
 use crate::frontmatter;
-use crate::types::State;
+use crate::types::Vault;
 use crate::utils::launch_editor;
 use colored::*;
 use std::collections::HashMap;
 use std::io::{self, Read};
 use std::path::Path;
 
-pub async fn execute(state: &State, page_or_path: &Path, force: bool) -> Result<()> {
-    let mut path = state.vault.join(page_or_path);
+pub async fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
+    let mut path = vault.path.join(page_or_path);
     if path.extension().is_none() {
         path.set_extension("md");
     }
@@ -22,7 +22,7 @@ pub async fn execute(state: &State, page_or_path: &Path, force: bool) -> Result<
         std::process::exit(1);
     }
 
-    if is_overwrite && state.verbose {
+    if is_overwrite && vault.verbose {
         println!(
             "{}",
             format!("Overwriting existing file: {}", path.display()).yellow()
@@ -45,7 +45,7 @@ pub async fn execute(state: &State, page_or_path: &Path, force: bool) -> Result<
     let content = if atty::isnt(atty::Stream::Stdin) {
         let mut buffer = String::new();
         io::stdin().read_to_string(&mut buffer)?;
-        if state.verbose {
+        if vault.verbose {
             println!("Using content from stdin");
         }
         buffer.trim().to_string()
@@ -53,17 +53,17 @@ pub async fn execute(state: &State, page_or_path: &Path, force: bool) -> Result<
         format!("# {}\n\n", title)
     };
 
-    frontmatter::add_default_frontmatter(&mut frontmatter, title, &state.ident_key);
+    frontmatter::add_default_frontmatter(&mut frontmatter, title, &vault.ident_key);
 
     let serialized = frontmatter::serialize_with_frontmatter(&frontmatter, &content)?;
     std::fs::write(&path, serialized)?;
 
     // Open file in editor (if not using stdin input)
     if atty::is(atty::Stream::Stdin) {
-        launch_editor(&state.editor, &path)?;
+        launch_editor(&vault.editor, &path)?;
     }
 
-    if state.verbose {
+    if vault.verbose {
         let action = if is_overwrite {
             "Overwritten"
         } else {

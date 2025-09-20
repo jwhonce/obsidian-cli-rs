@@ -1,5 +1,5 @@
 use crate::errors::Result;
-use crate::types::State;
+use crate::types::Vault;
 
 /// Execute the serve command to start the MCP server.
 ///
@@ -7,12 +7,12 @@ use crate::types::State;
 /// that exposes vault operations as tools for AI assistants and other MCP clients.
 ///
 /// # Arguments
-/// * `state` - The application state containing vault configuration
+/// * `vault` - The vault containing configuration and path information
 ///
 /// # Returns
 /// * `Result<()>` - Ok on successful server shutdown, Err on startup/runtime errors
-pub async fn execute(state: &State) -> Result<()> {
+pub async fn execute(vault: &Vault) -> Result<()> {
     // Delegate to the MCP server implementation
     // The actual server logic is kept in mcp_server.rs due to its complexity
-    crate::mcp_server::serve(state).await
+    crate::mcp_server::serve(vault).await
 }

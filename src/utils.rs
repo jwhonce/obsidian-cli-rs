@@ -1,7 +1,7 @@
 use crate::errors::{ObsidianError, Result};
 use crate::frontmatter;
 use crate::template;
-use crate::types::{FileTypeStat, State, TemplateVars, VaultInfo};
+use crate::types::{FileTypeStat, Vault, TemplateVars, VaultInfo};
 use chrono::{DateTime, Datelike, Local};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
@@ -163,7 +163,7 @@ pub fn format_journal_template(template_str: &str, vars: &TemplateVars) -> Resul
     template::format_journal_template_with_vars(template_str, vars)
 }
 
-pub fn get_vault_info(state: &State) -> Result<VaultInfo> {
+pub fn get_vault_info(vault: &Vault) -> Result<VaultInfo> {
     let mut file_type_stats: HashMap<String, FileTypeStat> = HashMap::new();
     let mut total_files = 0;
     let mut total_directories = 0;
@@ -171,7 +171,7 @@ pub fn get_vault_info(state: &State) -> Result<VaultInfo> {
     let mut usage_directories = 0;
     let mut markdown_files = 0;
 
-    for entry in WalkDir::new(&state.vault)
+    for entry in WalkDir::new(&vault.path)
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -179,12 +179,12 @@ pub fn get_vault_info(state: &State) -> Result<VaultInfo> {
         let relative_path =
             entry
                 .path()
-                .strip_prefix(&state.vault)
+                .strip_prefix(&vault.path)
                 .map_err(|_| ObsidianError::FileNotFound {
                     path: entry.path().to_string_lossy().to_string(),
                 })?;
 
-        if is_path_blacklisted(relative_path, &state.blacklist) {
+        if is_path_blacklisted(relative_path, &vault.blacklist) {
             continue;
         }
 
@@ -221,21 +221,21 @@ pub fn get_vault_info(state: &State) -> Result<VaultInfo> {
 
     let now = Local::now();
     let template_vars = get_template_vars(now);
-    let journal_path = format_journal_template(&state.journal_template, &template_vars)?;
+    let journal_path = format_journal_template(&vault.journal_template, &template_vars)?;
 
     Ok(VaultInfo {
-        vault_path: state.vault.clone(),
+        vault_path: vault.path.clone(),
         total_files,
         total_directories,
         usage_files,
         usage_directories,
         file_type_stats,
         markdown_files,
-        blacklist: state.blacklist.clone(),
-        editor: state.editor.clone(),
-        journal_template: state.journal_template.clone(),
+        blacklist: vault.blacklist.clone(),
+        editor: vault.editor.clone(),
+        journal_template: vault.journal_template.clone(),
         journal_path,
-        verbose: state.verbose,
+        verbose: vault.verbose,
         version: env!("CARGO_PKG_VERSION").to_string(),
     })
 }

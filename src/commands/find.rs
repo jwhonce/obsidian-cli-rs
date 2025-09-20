@@ -1,17 +1,17 @@
 use crate::errors::Result;
 use crate::frontmatter;
-use crate::types::State;
+use crate::types::Vault;
 use crate::utils::find_matching_files;
 use colored::*;
 use serde_json::Value;
 
-pub async fn execute(state: &State, page_name: &str, exact: bool) -> Result<()> {
-    if state.verbose {
+pub async fn execute(vault: &Vault, page_name: &str, exact: bool) -> Result<()> {
+    if vault.verbose {
         println!("Searching for page: '{}'", page_name);
         println!("Exact match: {}", exact);
     }
 
-    let matches = find_matching_files(&state.vault, page_name, exact)?;
+    let matches = find_matching_files(&vault.path, page_name, exact)?;
 
     if matches.is_empty() {
         eprintln!(
@@ -24,8 +24,8 @@ pub async fn execute(state: &State, page_name: &str, exact: bool) -> Result<()> 
         println!("{}", path.display());
 
         // Show frontmatter title if verbose and it exists
-        if state.verbose {
-            let full_path = state.vault.join(&path);
+        if vault.verbose {
+            let full_path = vault.path.join(&path);
             if let Ok((frontmatter, _)) = frontmatter::parse_file(&full_path) {
                 if let Some(Value::String(title)) = frontmatter.get("title") {
                     println!("  title: {}", title);

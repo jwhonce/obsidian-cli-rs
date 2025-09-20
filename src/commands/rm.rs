@@ -1,11 +1,11 @@
 use crate::errors::Result;
-use crate::types::State;
+use crate::types::Vault;
 use colored::*;
 use std::io::{self, Write};
 use std::path::Path;
 
-pub async fn execute(state: &State, page_or_path: &Path, force: bool) -> Result<()> {
-    let file_path = crate::resolve_page_or_path!(state, page_or_path)?;
+pub async fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
+    let file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
 
     if !force {
         print!(
@@ -25,7 +25,7 @@ pub async fn execute(state: &State, page_or_path: &Path, force: bool) -> Result<
 
     std::fs::remove_file(&file_path)?;
 
-    if state.verbose {
+    if vault.verbose {
         println!("{}: {}", "File removed".green(), file_path.display());
     }
 

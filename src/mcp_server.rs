@@ -1,6 +1,6 @@
 use crate::errors::{ObsidianError, Result};
 use crate::frontmatter;
-use crate::types::State;
+use crate::types::Vault;
 use crate::utils::is_path_blacklisted;
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
@@ -9,10 +9,10 @@ use std::collections::HashMap;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use walkdir::WalkDir;
 
-pub async fn serve(state: &State) -> Result<()> {
+pub async fn serve(vault: &Vault) -> Result<()> {
     println!("Starting Obsidian MCP Server...");
 
-    let server = ObsidianMcpServer::new(state.clone());
+    let server = ObsidianMcpServer::new(vault.clone());
 
     println!("Obsidian MCP Server listening on stdio...");
 
@@ -96,12 +96,12 @@ impl TextContent {
 }
 
 pub struct ObsidianMcpServer {
-    state: State,
+    vault: Vault,
 }
 
 impl ObsidianMcpServer {
-    pub fn new(state: State) -> Self {
-        Self { state }
+    pub fn new(vault: Vault) -> Self {
+        Self { vault }
     }
 
     async fn run_stdio(&self) -> Result<()> {
@@ -324,7 +324,7 @@ impl ObsidianMcpServer {
             format!("{}.md", filename)
         };
 
-        let full_path = self.state.vault.join(&normalized_filename);
+        let full_path = self.vault.path.join(&normalized_filename);
 
         // Check if file already exists
         if full_path.exists() && !force {
@@ -358,7 +358,7 @@ impl ObsidianMcpServer {
         let final_content = if content.is_empty() {
             // Create with default frontmatter
             let mut fm = HashMap::new();
-            frontmatter::add_default_frontmatter(&mut fm, filename, &self.state.ident_key);
+            frontmatter::add_default_frontmatter(&mut fm, filename, &self.vault.ident_key);
             frontmatter::serialize_with_frontmatter(&fm, "").map_err(|e| JsonRpcError {
                 code: -32603,
                 message: format!("Failed to create frontmatter: {}", e),
@@ -409,7 +409,7 @@ impl ObsidianMcpServer {
             .unwrap_or(false);
 
         let matches =
-            crate::utils::find_matching_files(&self.state.vault, term, exact).map_err(|e| {
+            crate::utils::find_matching_files(&self.vault.path, term, exact).map_err(|e| {
                 JsonRpcError {
                     code: -32603,
                     message: format!("Error finding notes: {}", e),
@@ -437,7 +437,7 @@ impl ObsidianMcpServer {
             let file_list: Vec<String> = matches
                 .iter()
                 .map(|path| {
-                    path.strip_prefix(&self.state.vault)
+                    path.strip_prefix(&self.vault.path)
                         .unwrap_or(path)
                         .display()
                         .to_string()
@@ -480,9 +480,9 @@ impl ObsidianMcpServer {
             .unwrap_or(false);
 
         // Try different file paths
-        let mut full_path = self.state.vault.join(filename);
+        let mut full_path = self.vault.path.join(filename);
         if !full_path.exists() && !filename.ends_with(".md") {
-            full_path = self.state.vault.join(format!("{}.md", filename));
+            full_path = self.vault.path.join(format!("{}.md", filename));
         }
 
         if !full_path.exists() {
@@ -591,7 +591,7 @@ impl ObsidianMcpServer {
         Ok(json!({
             "resources": [
                 {
-                    "uri": format!("obsidian://vault/{}", self.state.vault.display()),
+                    "uri": format!("obsidian://vault/{}", self.vault.path.display()),
                     "name": "Obsidian Vault",
                     "description": "Access to the Obsidian vault files and metadata",
                     "mimeType": "application/x-obsidian-vault"
@@ -621,7 +621,7 @@ impl ObsidianMcpServer {
 
         if uri.starts_with("obsidian://vault/") {
             let vault_path = uri.strip_prefix("obsidian://vault/").unwrap();
-            let full_path = self.state.vault.join(vault_path);
+            let full_path = self.vault.path.join(vault_path);
 
             let content = std::fs::read_to_string(&full_path).map_err(|e| JsonRpcError {
                 code: -32603,
@@ -657,11 +657,11 @@ impl ObsidianMcpServer {
         let mut file_type_stats: HashMap<String, FileTypeStat> = HashMap::new();
         let mut markdown_files = 0;
 
-        for entry in WalkDir::new(&self.state.vault).follow_links(false) {
+        for entry in WalkDir::new(&self.vault.path).follow_links(false) {
             let entry = entry.map_err(|e| ObsidianError::Io(std::io::Error::other(e)))?;
             let path = entry.path();
 
-            if is_path_blacklisted(path, &self.state.blacklist) {
+            if is_path_blacklisted(path, &self.vault.blacklist) {
                 continue;
             }
 
@@ -700,7 +700,7 @@ impl ObsidianMcpServer {
                         stat.total_size += metadata.len();
                     }
                 }
-            } else if path.is_dir() && path != self.state.vault {
+            } else if path.is_dir() && path != self.vault.path {
                 total_directories += 1;
                 if let Ok(metadata) = std::fs::metadata(path) {
                     usage_directories += metadata.len();
@@ -709,7 +709,7 @@ impl ObsidianMcpServer {
         }
 
         let journal_path = crate::utils::format_journal_template(
-            &self.state.journal_template,
+            &self.vault.journal_template,
             &crate::types::TemplateVars {
                 year: chrono::Utc::now().year(),
                 month: chrono::Utc::now().month(),
@@ -722,18 +722,18 @@ impl ObsidianMcpServer {
         )?;
 
         Ok(VaultInfo {
-            vault_path: self.state.vault.clone(),
+            vault_path: self.vault.path.clone(),
             total_files,
             total_directories,
             usage_files,
             usage_directories,
             file_type_stats,
             markdown_files,
-            blacklist: self.state.blacklist.clone(),
-            editor: self.state.editor.clone(),
-            journal_template: self.state.journal_template.clone(),
+            blacklist: self.vault.blacklist.clone(),
+            editor: self.vault.editor.clone(),
+            journal_template: self.vault.journal_template.clone(),
             journal_path,
-            verbose: self.state.verbose,
+            verbose: self.vault.verbose,
             version: "0.1.0".to_string(),
         })
     }

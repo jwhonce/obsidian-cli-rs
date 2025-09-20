@@ -2,7 +2,7 @@
 //! Tests path operations, file matching, and template utilities
 
 use chrono::Local;
-use obsidian_cli::{utils::*, State};
+use obsidian_cli::{utils::*, Vault};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
@@ -11,9 +11,9 @@ use tempfile::TempDir;
 mod utils_tests {
     use super::*;
 
-    fn create_test_state(temp_dir: &TempDir) -> State {
-        State {
-            vault: temp_dir.path().to_path_buf(),
+    fn create_test_vault(temp_dir: &TempDir) -> Vault {
+        Vault {
+            path: temp_dir.path().to_path_buf(),
             blacklist: vec![".obsidian".to_string(), "*.tmp".to_string()],
             editor: "echo".to_string(),
             ident_key: "uid".to_string(),
@@ -282,7 +282,7 @@ type: journal
     #[test]
     fn test_get_vault_info() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create some test files
         fs::write(temp_dir.path().join("note1.md"), "# Note 1\nContent").unwrap();
@@ -296,7 +296,7 @@ type: journal
         )
         .unwrap();
 
-        let result = get_vault_info(&state);
+        let result = get_vault_info(&vault);
         assert!(result.is_ok());
 
         let info = result.unwrap();
@@ -309,9 +309,9 @@ type: journal
     #[test]
     fn test_get_vault_info_empty_vault() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
-        let result = get_vault_info(&state);
+        let result = get_vault_info(&vault);
         assert!(result.is_ok());
 
         let info = result.unwrap();
@@ -322,7 +322,7 @@ type: journal
     #[test]
     fn test_get_vault_info_with_blacklisted_files() {
         let temp_dir = TempDir::new().unwrap();
-        let state = create_test_state(&temp_dir);
+        let vault = create_test_vault(&temp_dir);
 
         // Create normal files
         fs::write(temp_dir.path().join("note.md"), "# Note\nContent").unwrap();
@@ -332,7 +332,7 @@ type: journal
         fs::write(temp_dir.path().join(".obsidian/config.json"), "{}").unwrap();
         fs::write(temp_dir.path().join("temp.tmp"), "Temporary file").unwrap();
 
-        let result = get_vault_info(&state);
+        let result = get_vault_info(&vault);
         assert!(result.is_ok());
 
         let info = result.unwrap();
@@ -467,8 +467,8 @@ Content here.
         }
 
         // Test vault info with unusual files
-        let state = create_test_state(&temp_dir);
-        let result = get_vault_info(&state);
+        let vault = create_test_vault(&temp_dir);
+        let result = get_vault_info(&vault);
         assert!(result.is_ok());
 
         let info = result.unwrap();

@@ -1,5 +1,5 @@
-# Rust
-/target/
+# Rust build artifacts
+target/
 Cargo.lock
 
 # IDE

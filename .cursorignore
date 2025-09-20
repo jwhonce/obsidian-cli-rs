@@ -1,49 +1,22 @@
-# Build artifacts and dependencies
-target/
-Cargo.lock
-
-# Coverage reports and profiling
-target/coverage/
-*.profraw
-tarpaulin-report.html
-lcov.info
+# Additional coverage reports not in .gitignore
 cobertura.xml
 
-# Binary executables
+# Binary executables (built locally)
 obsidian-cli
 *.exe
-
-# IDE and editor files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# Temporary files and test artifacts
-temp_*
-*.tmp
-test-vault/
 
 # Generated documentation
 target/doc/
 
-# Large generated files that don't need AI analysis
-*.lock
-*.log
+# Large database files that don't need AI analysis
 *.sqlite
 *.db
 
-# Node modules (if any JS tooling is added)
+# Language-specific caches for future tooling
 node_modules/
-
-# Python cache (for compatibility scripts)
 __pycache__/
 *.pyc
 *.pyo
 
-# Git directory
+# Git directory (never needs AI analysis)
 .git/

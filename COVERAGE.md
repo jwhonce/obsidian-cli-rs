@@ -51,14 +51,14 @@ make quality             # Format + lint + check + test
 The project now includes 12 specialized CI-safe test suites:
 
 - `basic_tests.rs` - Foundation functionality (7 tests)
-- `template_tests.rs` - Template engine (7 tests) 
+- `template_tests.rs` - Template engine (7 tests)
 - `simple_config_tests.rs` - Configuration basics (29 tests)
 - `simple_utils_tests.rs` - Utility functions (10 tests)
 - `command_integration_tests.rs` - Command integration (24 tests)
 - `frontmatter_edge_cases_tests.rs` - Frontmatter parsing (29 tests)
 - `template_error_path_tests.rs` - Template error handling (18 tests)
 - `comprehensive_mcp_server_tests.rs` - MCP protocol (22 tests)
-- `advanced_query_engine_tests.rs` - Query engine (27 tests) 
+- `advanced_query_engine_tests.rs` - Query engine (27 tests)
 - `essential_cli_tests.rs` - CLI integration (14 tests)
 - `config_tests.rs` - Advanced configuration (17 tests)
 - `utils_tests.rs` - Utility edge cases (25 tests)
@@ -145,6 +145,7 @@ make coverage-mcp        # Focus on MCP server only
 ### Troubleshooting
 
 **Coverage reports not generating?**
+
 ```bash
 # Check if tarpaulin is installed
 cargo tarpaulin --version
@@ -154,6 +155,7 @@ cargo install cargo-tarpaulin
 ```
 
 **Tests failing?**
+
 ```bash
 # Run individual test suites
 make test-mcp
@@ -165,6 +167,7 @@ cargo test test_name -- --nocapture
 ```
 
 **HTML report not opening?**
+
 ```bash
 # Manual path (macOS)
 open target/coverage/tarpaulin-report.html
@@ -175,19 +178,19 @@ xdg-open target/coverage/tarpaulin-report.html
 
 ## Coverage Goals
 
-### Current Status: 81.39% ✅ ENTERPRISE-GRADE ACHIEVED!
+### Current Status: 81.39% ✅ ENTERPRISE-GRADE ACHIEVED
 
 **Mission Accomplished**: Exceeded industry standard (80%) for enterprise software testing.
 
-### Coverage Milestones Achieved:
+### Coverage Milestones Achieved
 
 - ✅ **80% Coverage**: **EXCEEDED** - Now at 81.39%  
 - ✅ **Comprehensive Test Suite**: 241 tests across 12 specialized suites
-- ✅ **CI-Safe Architecture**: Zero user input requirements 
+- ✅ **CI-Safe Architecture**: Zero user input requirements
 - ✅ **Error Path Coverage**: Extensive edge case testing
 - ✅ **Integration Testing**: Full CLI workflow validation
 
-### Current Module Coverage:
+### Current Module Coverage
 
 - **MCP Server**: Comprehensive JSON-RPC protocol testing
 - **Query Engine**: Advanced filtering and output format testing  
@@ -232,7 +235,7 @@ make coverage-ci
 When adding new code:
 
 1. **Run existing tests**: `make test`
-2. **Check current coverage**: `make coverage-minimal` 
+2. **Check current coverage**: `make coverage-minimal`
 3. **Add tests for new code**: Follow existing patterns
 4. **Verify improvement**: `make coverage-minimal`
 5. **Generate HTML report**: `make coverage-html` (for detailed review)

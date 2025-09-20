@@ -1,10 +1,10 @@
 //! Simple utility function tests - CI safe, no user input
 //! Basic tests for utility functions without complex pattern matching
 
-use obsidian_cli::{utils::*, State};
-use tempfile::TempDir;
-use std::fs;
 use chrono::Local;
+use obsidian_cli::{utils::*, State};
+use std::fs;
+use tempfile::TempDir;
 
 #[cfg(test)]
 mod simple_utils_tests {
@@ -79,14 +79,24 @@ mod simple_utils_tests {
         let vault_path = temp_dir.path();
 
         // Create test files
-        fs::write(vault_path.join("exact-match.md"), "# Exact Match\nContent here").unwrap();
-        fs::write(vault_path.join("other-file.md"), "# Other File\nDifferent content").unwrap();
+        fs::write(
+            vault_path.join("exact-match.md"),
+            "# Exact Match\nContent here",
+        )
+        .unwrap();
+        fs::write(
+            vault_path.join("other-file.md"),
+            "# Other File\nDifferent content",
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "exact-match", false);
         assert!(results.is_ok());
         let files = results.unwrap();
         assert!(!files.is_empty());
-        assert!(files.iter().any(|path| path.file_name().unwrap() == "exact-match.md"));
+        assert!(files
+            .iter()
+            .any(|path| path.file_name().unwrap() == "exact-match.md"));
     }
 
     #[test]
@@ -95,7 +105,11 @@ mod simple_utils_tests {
         let vault_path = temp_dir.path();
 
         // Create test files
-        fs::write(vault_path.join("partial-match-test.md"), "# Partial Match Test\nThis should match partial searches.").unwrap();
+        fs::write(
+            vault_path.join("partial-match-test.md"),
+            "# Partial Match Test\nThis should match partial searches.",
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "partial", false);
         assert!(results.is_ok());
@@ -108,7 +122,11 @@ mod simple_utils_tests {
         let temp_dir = TempDir::new().unwrap();
         let vault_path = temp_dir.path();
 
-        fs::write(vault_path.join("CaSeTest.md"), "# Case Test\nMixed case content").unwrap();
+        fs::write(
+            vault_path.join("CaSeTest.md"),
+            "# Case Test\nMixed case content",
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "casetest", false);
         assert!(results.is_ok());
@@ -131,7 +149,7 @@ mod simple_utils_tests {
     fn test_get_template_vars() {
         let date = Local::now();
         let vars = get_template_vars(date);
-        
+
         assert!(vars.year >= 2020);
         assert!(vars.month >= 1 && vars.month <= 12);
         assert!(vars.day >= 1 && vars.day <= 31);
@@ -146,7 +164,7 @@ mod simple_utils_tests {
         use chrono::TimeZone;
         let date = Local.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let vars = get_template_vars(date);
-        
+
         assert_eq!(vars.year, 2023);
         assert_eq!(vars.month, 6);
         assert_eq!(vars.day, 15);
@@ -161,10 +179,10 @@ mod simple_utils_tests {
         use chrono::TimeZone;
         let date = Local.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let vars = get_template_vars(date);
-        
+
         let template = "# Daily Note";
         let result = format_journal_template(template, &vars);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert!(formatted.contains("# Daily Note"));
@@ -178,14 +196,18 @@ mod simple_utils_tests {
         // Create some test files
         fs::write(temp_dir.path().join("note1.md"), "# Note 1\nContent").unwrap();
         fs::write(temp_dir.path().join("note2.md"), "# Note 2\nMore content").unwrap();
-        
+
         // Create nested structure
         fs::create_dir_all(temp_dir.path().join("subfolder")).unwrap();
-        fs::write(temp_dir.path().join("subfolder/note3.md"), "# Note 3\nNested content").unwrap();
+        fs::write(
+            temp_dir.path().join("subfolder/note3.md"),
+            "# Note 3\nNested content",
+        )
+        .unwrap();
 
         let result = get_vault_info(&state);
         assert!(result.is_ok());
-        
+
         let info = result.unwrap();
         assert!(info.total_files >= 3);
         assert!(info.markdown_files >= 3);
@@ -200,7 +222,7 @@ mod simple_utils_tests {
 
         let result = get_vault_info(&state);
         assert!(result.is_ok());
-        
+
         let info = result.unwrap();
         assert_eq!(info.total_files, 0);
         assert_eq!(info.markdown_files, 0);
@@ -243,26 +265,26 @@ mod simple_utils_tests {
     fn test_edge_case_paths() {
         let temp_dir = TempDir::new().unwrap();
         let vault_path = temp_dir.path();
-        
+
         // Create files with unusual names
         let unusual_names = vec![
             "file with spaces.md",
             "file_with_underscores.md",
             "file-with-dashes.md",
         ];
-        
+
         for name in &unusual_names {
             fs::write(vault_path.join(name), format!("Content of {}", name)).unwrap();
         }
-        
+
         // Test vault info with unusual files
         let state = create_test_state(&temp_dir);
         let result = get_vault_info(&state);
         assert!(result.is_ok());
-        
+
         let info = result.unwrap();
         assert_eq!(info.total_files, unusual_names.len());
-        
+
         // Test find functionality
         for name in &unusual_names {
             let results = find_matching_files(vault_path, &name[0..4], false); // Search first 4 chars

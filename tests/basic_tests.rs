@@ -1,8 +1,8 @@
 //! Basic tests that work with CI
 //! Completely rewritten for automated testing without user input
 
-use tempfile::TempDir;
 use std::fs;
+use tempfile::TempDir;
 
 #[test]
 fn test_basic_functionality() {
@@ -25,14 +25,14 @@ This is test content.
 
     // Verify file was created
     assert!(vault_path.join("test-note.md").exists());
-    
+
     // Verify content
     let content = fs::read_to_string(vault_path.join("test-note.md")).unwrap();
     assert!(content.contains("Test Note"));
     assert!(content.contains("test content"));
 }
 
-#[test] 
+#[test]
 fn test_frontmatter_parsing() {
     let content = r#"---
 title: Test
@@ -41,10 +41,10 @@ tags: [example]
 
 # Content here
 "#;
-    
+
     let result = obsidian_cli::frontmatter::parse_string(content);
     assert!(result.is_ok());
-    
+
     let (fm, body) = result.unwrap();
     assert!(fm.contains_key("title"));
     assert!(body.contains("Content here"));
@@ -76,14 +76,14 @@ fn test_path_operations() {
     assert!(temp_dir.path().is_dir());
 }
 
-#[test] 
+#[test]
 fn test_file_creation() {
     let temp_dir = TempDir::new().unwrap();
     let test_file = temp_dir.path().join("test.txt");
-    
+
     fs::write(&test_file, "test content").unwrap();
     assert!(test_file.exists());
-    
+
     let content = fs::read_to_string(&test_file).unwrap();
     assert_eq!(content, "test content");
 }
@@ -92,16 +92,16 @@ fn test_file_creation() {
 fn test_vault_structure() {
     let temp_dir = TempDir::new().unwrap();
     let vault_path = temp_dir.path();
-    
+
     // Create typical vault structure
     fs::create_dir_all(vault_path.join(".obsidian")).unwrap();
     fs::create_dir_all(vault_path.join("Daily Notes")).unwrap();
     fs::create_dir_all(vault_path.join("Templates")).unwrap();
-    
+
     // Create some files
     fs::write(vault_path.join("README.md"), "# My Vault").unwrap();
     fs::write(vault_path.join("Daily Notes/2023-01-01.md"), "# Daily Note").unwrap();
-    
+
     // Verify structure
     assert!(vault_path.join(".obsidian").is_dir());
     assert!(vault_path.join("Daily Notes").is_dir());
@@ -114,10 +114,10 @@ fn test_vault_structure() {
 fn test_unicode_content() {
     let temp_dir = TempDir::new().unwrap();
     let unicode_file = temp_dir.path().join("unicode.md");
-    
+
     let unicode_content = "# Unicode Test 🌟\n\n这是中文 • Français • العربية";
     fs::write(&unicode_file, unicode_content).unwrap();
-    
+
     let content = fs::read_to_string(&unicode_file).unwrap();
     assert!(content.contains("🌟"));
     assert!(content.contains("这是中文"));
@@ -130,7 +130,7 @@ fn test_empty_frontmatter() {
     let content = "---\n---\n\n# Just content";
     let result = obsidian_cli::frontmatter::parse_string(content);
     assert!(result.is_ok());
-    
+
     let (fm, body) = result.unwrap();
     assert!(fm.is_empty());
     assert!(body.contains("Just content"));
@@ -141,7 +141,7 @@ fn test_no_frontmatter() {
     let content = "# Plain markdown\n\nNo frontmatter here.";
     let result = obsidian_cli::frontmatter::parse_string(content);
     assert!(result.is_ok());
-    
+
     let (fm, body) = result.unwrap();
     assert!(fm.is_empty());
     assert!(body.contains("Plain markdown"));

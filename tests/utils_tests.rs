@@ -1,11 +1,11 @@
 //! Utility function tests - CI safe, no user input
 //! Tests path operations, file matching, and template utilities
 
+use chrono::Local;
 use obsidian_cli::{utils::*, State};
-use tempfile::TempDir;
 use std::fs;
 use std::path::Path;
-use chrono::Local;
+use tempfile::TempDir;
 
 #[cfg(test)]
 mod utils_tests {
@@ -30,10 +30,19 @@ mod utils_tests {
             "node_modules".to_string(),
         ];
 
-        assert!(is_path_blacklisted(Path::new(".obsidian/config.json"), &blacklist));
+        assert!(is_path_blacklisted(
+            Path::new(".obsidian/config.json"),
+            &blacklist
+        ));
         assert!(is_path_blacklisted(Path::new("test.tmp"), &blacklist));
-        assert!(is_path_blacklisted(Path::new("project/node_modules/package.json"), &blacklist));
-        assert!(!is_path_blacklisted(Path::new("normal-file.md"), &blacklist));
+        assert!(is_path_blacklisted(
+            Path::new("project/node_modules/package.json"),
+            &blacklist
+        ));
+        assert!(!is_path_blacklisted(
+            Path::new("normal-file.md"),
+            &blacklist
+        ));
         assert!(!is_path_blacklisted(Path::new("important.txt"), &blacklist));
     }
 
@@ -47,7 +56,10 @@ mod utils_tests {
 
         assert!(is_path_blacklisted(Path::new("error.log"), &blacklist));
         assert!(is_path_blacklisted(Path::new("temp_file.txt"), &blacklist));
-        assert!(is_path_blacklisted(Path::new("my_cache_file.dat"), &blacklist));
+        assert!(is_path_blacklisted(
+            Path::new("my_cache_file.dat"),
+            &blacklist
+        ));
         assert!(is_path_blacklisted(Path::new("cache.txt"), &blacklist));
         assert!(!is_path_blacklisted(Path::new("normal.md"), &blacklist));
     }
@@ -110,14 +122,24 @@ mod utils_tests {
         let vault_path = temp_dir.path();
 
         // Create test files
-        fs::write(vault_path.join("exact-match.md"), "# Exact Match\nContent here").unwrap();
-        fs::write(vault_path.join("other-file.md"), "# Other File\nDifferent content").unwrap();
+        fs::write(
+            vault_path.join("exact-match.md"),
+            "# Exact Match\nContent here",
+        )
+        .unwrap();
+        fs::write(
+            vault_path.join("other-file.md"),
+            "# Other File\nDifferent content",
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "exact-match", false);
         assert!(results.is_ok());
         let files = results.unwrap();
         assert!(!files.is_empty());
-        assert!(files.iter().any(|path| path.file_name().unwrap() == "exact-match.md"));
+        assert!(files
+            .iter()
+            .any(|path| path.file_name().unwrap() == "exact-match.md"));
     }
 
     #[test]
@@ -136,7 +158,8 @@ tags: [partial, test]
 # Partial Match Test
 This should match partial searches.
 "#,
-        ).unwrap();
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "partial", false);
         assert!(results.is_ok());
@@ -149,7 +172,11 @@ This should match partial searches.
         let temp_dir = TempDir::new().unwrap();
         let vault_path = temp_dir.path();
 
-        fs::write(vault_path.join("CaSeTest.md"), "# Case Test\nMixed case content").unwrap();
+        fs::write(
+            vault_path.join("CaSeTest.md"),
+            "# Case Test\nMixed case content",
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "casetest", false);
         assert!(results.is_ok());
@@ -172,7 +199,7 @@ This should match partial searches.
     fn test_get_template_vars() {
         let date = Local::now();
         let vars = get_template_vars(date);
-        
+
         assert!(vars.year >= 2020);
         assert!(vars.month >= 1 && vars.month <= 12);
         assert!(vars.day >= 1 && vars.day <= 31);
@@ -187,7 +214,7 @@ This should match partial searches.
         use chrono::TimeZone;
         let date = Local.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let vars = get_template_vars(date);
-        
+
         assert_eq!(vars.year, 2023);
         assert_eq!(vars.month, 6);
         assert_eq!(vars.day, 15);
@@ -202,10 +229,10 @@ This should match partial searches.
         use chrono::TimeZone;
         let date = Local.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let vars = get_template_vars(date);
-        
+
         let template = "# Daily Note {year}-{month:02}-{day:02}\n\n## {weekday}";
         let result = format_journal_template(template, &vars);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert!(formatted.contains("# Daily Note 2023-06-15"));
@@ -217,7 +244,7 @@ This should match partial searches.
         use chrono::TimeZone;
         let date = Local.with_ymd_and_hms(2023, 12, 25, 15, 45, 0).unwrap();
         let vars = get_template_vars(date);
-        
+
         let template = r#"---
 title: "Journal {year}-{month:02}-{day:02}"
 date: {year}-{month:02}-{day:02}
@@ -243,7 +270,7 @@ type: journal
 
         let result = format_journal_template(template, &vars);
         assert!(result.is_ok());
-        
+
         let formatted = result.unwrap();
         assert!(formatted.contains("title: \"Journal 2023-12-25\""));
         assert!(formatted.contains("date: 2023-12-25"));
@@ -260,14 +287,18 @@ type: journal
         // Create some test files
         fs::write(temp_dir.path().join("note1.md"), "# Note 1\nContent").unwrap();
         fs::write(temp_dir.path().join("note2.md"), "# Note 2\nMore content").unwrap();
-        
+
         // Create nested structure
         fs::create_dir_all(temp_dir.path().join("subfolder")).unwrap();
-        fs::write(temp_dir.path().join("subfolder/note3.md"), "# Note 3\nNested content").unwrap();
+        fs::write(
+            temp_dir.path().join("subfolder/note3.md"),
+            "# Note 3\nNested content",
+        )
+        .unwrap();
 
         let result = get_vault_info(&state);
         assert!(result.is_ok());
-        
+
         let info = result.unwrap();
         assert!(info.total_files >= 3);
         assert!(info.markdown_files >= 3);
@@ -282,7 +313,7 @@ type: journal
 
         let result = get_vault_info(&state);
         assert!(result.is_ok());
-        
+
         let info = result.unwrap();
         assert_eq!(info.total_files, 0);
         assert_eq!(info.markdown_files, 0);
@@ -295,7 +326,7 @@ type: journal
 
         // Create normal files
         fs::write(temp_dir.path().join("note.md"), "# Note\nContent").unwrap();
-        
+
         // Create blacklisted files
         fs::create_dir_all(temp_dir.path().join(".obsidian")).unwrap();
         fs::write(temp_dir.path().join(".obsidian/config.json"), "{}").unwrap();
@@ -303,7 +334,7 @@ type: journal
 
         let result = get_vault_info(&state);
         assert!(result.is_ok());
-        
+
         let info = result.unwrap();
         // Should only count non-blacklisted files
         assert_eq!(info.total_files, 1);
@@ -356,9 +387,15 @@ type: journal
 
         // Should be blacklisted
         assert!(is_path_blacklisted(Path::new("error.log"), &patterns));
-        assert!(is_path_blacklisted(Path::new("project/node_modules/package.json"), &patterns));
+        assert!(is_path_blacklisted(
+            Path::new("project/node_modules/package.json"),
+            &patterns
+        ));
         assert!(is_path_blacklisted(Path::new(".git/config"), &patterns));
-        assert!(is_path_blacklisted(Path::new("build/output.exe"), &patterns));
+        assert!(is_path_blacklisted(
+            Path::new("build/output.exe"),
+            &patterns
+        ));
         assert!(is_path_blacklisted(Path::new("temp.tmp"), &patterns));
         assert!(is_path_blacklisted(Path::new("cache_file.dat"), &patterns));
 
@@ -384,7 +421,8 @@ tags: [special, test]
 # Title Test
 Content here.
 "#,
-        ).unwrap();
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "Special Title", false);
         assert!(results.is_ok());
@@ -398,7 +436,11 @@ Content here.
         let vault_path = temp_dir.path();
 
         // Create file without frontmatter - use filename that matches search term
-        fs::write(vault_path.join("frontmatter-test.md"), "# No Frontmatter\nJust content").unwrap();
+        fs::write(
+            vault_path.join("frontmatter-test.md"),
+            "# No Frontmatter\nJust content",
+        )
+        .unwrap();
 
         let results = find_matching_files(vault_path, "frontmatter", false);
         assert!(results.is_ok());
@@ -410,7 +452,7 @@ Content here.
     fn test_edge_case_paths() {
         let temp_dir = TempDir::new().unwrap();
         let vault_path = temp_dir.path();
-        
+
         // Create files with unusual names
         let unusual_names = vec![
             "file with spaces.md",
@@ -419,19 +461,19 @@ Content here.
             "file.with.many.dots.md",
             "file(with)parens.md",
         ];
-        
+
         for name in &unusual_names {
             fs::write(vault_path.join(name), format!("Content of {}", name)).unwrap();
         }
-        
+
         // Test vault info with unusual files
         let state = create_test_state(&temp_dir);
         let result = get_vault_info(&state);
         assert!(result.is_ok());
-        
+
         let info = result.unwrap();
         assert_eq!(info.total_files, unusual_names.len());
-        
+
         // Test find functionality
         for name in &unusual_names {
             let results = find_matching_files(vault_path, &name[0..4], false); // Search first 4 chars

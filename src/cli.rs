@@ -7,15 +7,15 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 /// Macro to resolve page_or_path to a file_path for commands that operate on existing files
-/// 
+///
 /// Simplifies the common pattern in commands that operate on existing files by
 /// automatically calling resolve_page_path(page_or_path, &state.vault).
-/// 
+///
 /// Usage: `let file_path = crate::resolve_page_or_path!(state, page_or_path)?;`
 #[macro_export]
 macro_rules! resolve_page_or_path {
     ($state:expr, $page_or_path:expr) => {
-        crate::utils::resolve_page_path($page_or_path, &$state.vault)
+        $crate::utils::resolve_page_path($page_or_path, &$state.vault)
     };
 }
 

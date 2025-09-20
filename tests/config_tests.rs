@@ -2,9 +2,9 @@
 //! Tests config loading, validation, and default handling
 
 use obsidian_cli::Config;
-use tempfile::TempDir;
 use std::fs;
 use std::path::Path;
+use tempfile::TempDir;
 
 #[cfg(test)]
 mod config_tests {
@@ -13,7 +13,7 @@ mod config_tests {
     #[test]
     fn test_default_config_creation() {
         let config = Config::default();
-        
+
         // Verify all required fields have sensible defaults
         assert!(!config.journal_template.is_empty());
         assert!(!config.ident_key.is_empty());
@@ -27,12 +27,12 @@ mod config_tests {
     fn test_default_journal_template() {
         let config = Config::default();
         let template = &config.journal_template;
-        
+
         // Verify template contains expected placeholders
         assert!(template.contains("{year}"));
         assert!(template.contains("{month:02}")); // Default template uses formatted month
         assert!(template.contains("{day:02}")); // Default template uses formatted day
-        
+
         // Verify it's a reasonable journal template
         assert!(template.len() > 30); // Should be substantial
     }
@@ -41,13 +41,13 @@ mod config_tests {
     fn test_default_blacklist() {
         let config = Config::default();
         let blacklist = &config.blacklist;
-        
+
         // Should contain common patterns to ignore
         assert!(blacklist.contains(&".obsidian/".to_string())); // Default has trailing slash
         assert!(blacklist.contains(&"Assets/".to_string()));
         assert!(blacklist.contains(&".git/".to_string()));
         assert!(!blacklist.is_empty());
-        
+
         // Verify blacklist has reasonable entries
         let has_obsidian = blacklist.iter().any(|item| item.contains("obsidian"));
         assert!(has_obsidian);
@@ -63,7 +63,7 @@ mod config_tests {
     fn test_get_editor_with_default() {
         let config = Config::default();
         let editor = config.get_editor();
-        
+
         // Should return a default editor when none is configured
         assert!(!editor.is_empty());
         // Default should be vi when no EDITOR env var
@@ -72,24 +72,28 @@ mod config_tests {
 
     #[test]
     fn test_get_editor_with_config_value() {
-        let mut config = Config::default();
-        config.editor = Some("nano".to_string());
-        
+        let config = Config {
+            editor: Some("nano".to_string()),
+            ..Default::default()
+        };
+
         let editor = config.get_editor();
         assert_eq!(editor, "nano");
     }
 
     #[test]
     fn test_get_editor_with_env_var() {
-        let mut config = Config::default();
-        config.editor = None;
-        
+        let config = Config {
+            editor: None,
+            ..Default::default()
+        };
+
         // Set environment variable
         std::env::set_var("EDITOR", "emacs");
-        
+
         let editor = config.get_editor();
         assert_eq!(editor, "emacs");
-        
+
         // Clean up
         std::env::remove_var("EDITOR");
     }
@@ -98,7 +102,7 @@ mod config_tests {
     fn test_load_config_no_file() {
         // When no config file exists, should return default config
         let config = Config::load().unwrap();
-        
+
         // Should have default values
         assert!(!config.journal_template.is_empty());
         assert_eq!(config.ident_key, "uid");
@@ -113,25 +117,31 @@ mod config_tests {
         fs::create_dir(&vault_dir).unwrap();
         // Create .obsidian directory to make it a valid vault
         fs::create_dir(vault_dir.join(".obsidian")).unwrap();
-        
-        let toml_content = format!("
+
+        let toml_content = format!(
+            "
 vault = \"{}\"
 editor = \"code\"
 ident_key = \"id\"
 verbose = true
 journal_template = \"# Custom Template\"
 blacklist = [\".obsidian\", \"temp.txt\"]
-", vault_dir.to_string_lossy());
+",
+            vault_dir.to_string_lossy()
+        );
         fs::write(&config_file, toml_content).unwrap();
-        
+
         let config = Config::load_from_path(&config_file).unwrap();
-        
+
         assert_eq!(config.vault, Some(vault_dir));
         assert_eq!(config.editor, Some("code".to_string()));
         assert_eq!(config.ident_key, "id");
         assert!(config.verbose);
         assert!(config.journal_template.contains("Custom"));
-        assert_eq!(config.blacklist, vec![".obsidian".to_string(), "temp.txt".to_string()]);
+        assert_eq!(
+            config.blacklist,
+            vec![".obsidian".to_string(), "temp.txt".to_string()]
+        );
     }
 
     #[test]
@@ -142,20 +152,23 @@ blacklist = [\".obsidian\", \"temp.txt\"]
         fs::create_dir(&vault_dir).unwrap();
         // Create .obsidian directory to make it a valid vault
         fs::create_dir(vault_dir.join(".obsidian")).unwrap();
-        
-        let toml_content = format!("
+
+        let toml_content = format!(
+            "
 vault = \"{}\"
 blacklist = []
 journal_template = \"# Simple Template\"
 verbose = false
-", vault_dir.to_string_lossy());
+",
+            vault_dir.to_string_lossy()
+        );
         fs::write(&config_file, toml_content).unwrap();
-        
+
         let config = Config::load_from_path(&config_file).unwrap();
-        
+
         // Should have specified value
         assert_eq!(config.vault, Some(vault_dir));
-        
+
         // Should have defaults for unspecified values
         assert_eq!(config.ident_key, "uid");
         assert!(!config.verbose);
@@ -166,14 +179,14 @@ verbose = false
     fn test_load_config_with_invalid_toml() {
         let temp_dir = TempDir::new().unwrap();
         let config_file = temp_dir.path().join("invalid.toml");
-        
+
         let invalid_toml = "
 vault = \"/path/to/vault
 editor = \"missing quote
 invalid syntax here
 ";
         fs::write(&config_file, invalid_toml).unwrap();
-        
+
         let result = Config::load_from_path(&config_file);
         assert!(result.is_err());
     }
@@ -181,14 +194,14 @@ invalid syntax here
     #[test]
     fn test_resolve_vault_path_with_arg() {
         let config = Config::default();
-        
+
         // Should use the explicit argument over config
         let temp_dir = TempDir::new().unwrap();
         let vault_dir = temp_dir.path().join("arg_vault");
         fs::create_dir(&vault_dir).unwrap();
         // Create .obsidian directory to make it a valid vault
         fs::create_dir(vault_dir.join(".obsidian")).unwrap();
-        
+
         let result = config.resolve_vault_path(Some(&vault_dir));
         if let Err(e) = &result {
             println!("Error resolving vault path: {:?}", e);
@@ -204,10 +217,12 @@ invalid syntax here
         fs::create_dir(&vault_dir).unwrap();
         // Create .obsidian directory to make it a valid vault
         fs::create_dir(vault_dir.join(".obsidian")).unwrap();
-        
-        let mut config = Config::default();
-        config.vault = Some(vault_dir.clone());
-        
+
+        let config = Config {
+            vault: Some(vault_dir.clone()),
+            ..Default::default()
+        };
+
         let result = config.resolve_vault_path(None);
         if let Err(e) = &result {
             println!("Error resolving vault path: {:?}", e);
@@ -220,7 +235,7 @@ invalid syntax here
     fn test_resolve_vault_path_nonexistent() {
         let config = Config::default();
         let nonexistent = Path::new("/this/path/does/not/exist");
-        
+
         let result = config.resolve_vault_path(Some(nonexistent));
         assert!(result.is_err());
     }
@@ -228,10 +243,10 @@ invalid syntax here
     #[test]
     fn test_resolve_vault_path_no_vault_specified() {
         let config = Config::default(); // No vault in config
-        
+
         let result = config.resolve_vault_path(None);
         assert!(result.is_err());
-        
+
         let error = result.unwrap_err();
         let error_message = format!("{}", error);
         assert!(error_message.contains("Vault path is required"));
@@ -241,26 +256,29 @@ invalid syntax here
     fn test_config_with_tilde_expansion() {
         let temp_dir = TempDir::new().unwrap();
         let config_file = temp_dir.path().join("tilde.toml");
-        
+
         // Use a path that exists for testing
         let vault_dir = temp_dir.path().join("tilde_vault");
         fs::create_dir(&vault_dir).unwrap();
         // Create .obsidian directory to make it a valid vault
         fs::create_dir(vault_dir.join(".obsidian")).unwrap();
-        
-        let toml_content = format!("
+
+        let toml_content = format!(
+            "
 vault = \"{}\"
 editor = \"vim\"
 blacklist = []
 journal_template = \"# Test Template\"
 verbose = false
-", vault_dir.to_string_lossy());
-        
+",
+            vault_dir.to_string_lossy()
+        );
+
         fs::write(&config_file, toml_content).unwrap();
-        
+
         let config = Config::load_from_path(&config_file).unwrap();
         let resolved = config.resolve_vault_path(None).unwrap();
-        
+
         assert!(resolved.exists());
         assert!(resolved.is_absolute());
     }
@@ -275,7 +293,7 @@ verbose = false
             blacklist: vec!["test1".to_string(), "test2".to_string()],
             verbose: true,
         };
-        
+
         // Verify all fields are accessible
         assert_eq!(config.vault, Some("/test/vault".into()));
         assert_eq!(config.editor, Some("test-editor".to_string()));
@@ -295,9 +313,9 @@ verbose = false
             blacklist: vec!["orig1".to_string()],
             verbose: false,
         };
-        
+
         let cloned = original.clone();
-        
+
         assert_eq!(original.vault, cloned.vault);
         assert_eq!(original.editor, cloned.editor);
         assert_eq!(original.ident_key, cloned.ident_key);

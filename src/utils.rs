@@ -19,10 +19,10 @@ pub fn is_path_blacklisted(path: &Path, blacklist: &[String]) -> bool {
             glob_match(pattern, &path_str)
         } else {
             // Handle simple patterns - check both prefix and path component matching
-            path_str.starts_with(pattern) || 
-            path.components().any(|component| {
-                component.as_os_str().to_string_lossy() == *pattern
-            })
+            path_str.starts_with(pattern)
+                || path
+                    .components()
+                    .any(|component| component.as_os_str().to_string_lossy() == *pattern)
         }
     })
 }
@@ -30,12 +30,12 @@ pub fn is_path_blacklisted(path: &Path, blacklist: &[String]) -> bool {
 fn glob_match(pattern: &str, text: &str) -> bool {
     let pattern_chars: Vec<char> = pattern.chars().collect();
     let text_chars: Vec<char> = text.chars().collect();
-    
+
     fn match_recursive(pattern: &[char], text: &[char], pi: usize, ti: usize) -> bool {
         if pi >= pattern.len() {
             return ti >= text.len();
         }
-        
+
         if pattern[pi] == '*' {
             // Try matching zero characters
             if match_recursive(pattern, text, pi + 1, ti) {
@@ -48,15 +48,13 @@ fn glob_match(pattern: &str, text: &str) -> bool {
                 }
             }
             false
+        } else if ti >= text.len() || pattern[pi] != text[ti] {
+            false
         } else {
-            if ti >= text.len() || pattern[pi] != text[ti] {
-                false
-            } else {
-                match_recursive(pattern, text, pi + 1, ti + 1)
-            }
+            match_recursive(pattern, text, pi + 1, ti + 1)
         }
     }
-    
+
     match_recursive(&pattern_chars, &text_chars, 0, 0)
 }
 

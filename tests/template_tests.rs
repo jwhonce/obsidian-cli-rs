@@ -1,8 +1,8 @@
 //! Template engine tests - CI safe, no user input
 //! Tests the template system for journal creation and formatting
 
+use chrono::{TimeZone, Utc};
 use obsidian_cli::template::*;
-use chrono::{Utc, TimeZone};
 
 #[cfg(test)]
 mod template_tests {
@@ -12,19 +12,18 @@ mod template_tests {
     fn test_template_engine_creation() {
         let date = Utc.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let _engine = TemplateEngine::new(date);
-        
-        // Verify the engine was created successfully
-        assert!(true); // Engine creation doesn't fail
+
+        // Test passes if engine creation doesn't panic
     }
 
     #[test]
     fn test_basic_template_formatting() {
         let date = Utc.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let engine = TemplateEngine::new(date);
-        
+
         let simple_template = "Today is {year}-{month:02}-{day:02}";
         let result = engine.format(simple_template);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert_eq!(formatted, "Today is 2023-06-15");
@@ -34,7 +33,7 @@ mod template_tests {
     fn test_complex_template_formatting() {
         let date = Utc.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let engine = TemplateEngine::new(date);
-        
+
         let complex_template = r#"---
 title: "Daily Note {year}-{month:02}-{day:02}"
 date: {year}-{month:02}-{day:02}
@@ -60,7 +59,7 @@ It's {weekday}, {month_name} {day} in the year {year}.
 
         let result = engine.format(complex_template);
         assert!(result.is_ok());
-        
+
         let formatted = result.unwrap();
         assert!(formatted.contains("title: \"Daily Note 2023-06-15\""));
         assert!(formatted.contains("date: 2023-06-15"));
@@ -76,10 +75,10 @@ It's {weekday}, {month_name} {day} in the year {year}.
     fn test_template_with_all_variables() {
         let date = Utc.with_ymd_and_hms(2023, 12, 25, 15, 45, 0).unwrap();
         let engine = TemplateEngine::new(date);
-        
+
         let template = "Year: {year}, Month: {month}, Day: {day}, Month Name: {month_name}, Weekday: {weekday}, Month Abbr: {month_abbr}, Weekday Abbr: {weekday_abbr}";
         let result = engine.format(template);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert!(formatted.contains("Year: 2023"));
@@ -95,10 +94,10 @@ It's {weekday}, {month_name} {day} in the year {year}.
     fn test_template_with_padding() {
         let date = Utc.with_ymd_and_hms(2023, 3, 7, 9, 15, 0).unwrap();
         let engine = TemplateEngine::new(date);
-        
+
         let template = "{year}-{month:02}-{day:02}";
         let result = engine.format(template);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert_eq!(formatted, "2023-03-07");
@@ -108,10 +107,10 @@ It's {weekday}, {month_name} {day} in the year {year}.
     fn test_template_without_variables() {
         let date = Utc::now();
         let engine = TemplateEngine::new(date);
-        
+
         let template = "This is just plain text without any variables.";
         let result = engine.format(template);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert_eq!(formatted, template);
@@ -121,7 +120,7 @@ It's {weekday}, {month_name} {day} in the year {year}.
     fn test_empty_template() {
         let date = Utc::now();
         let engine = TemplateEngine::new(date);
-        
+
         let result = engine.format("");
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "");
@@ -131,10 +130,11 @@ It's {weekday}, {month_name} {day} in the year {year}.
     fn test_template_with_special_characters() {
         let date = Utc.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let engine = TemplateEngine::new(date);
-        
-        let template = "# 🗓️ Daily Note for {weekday} 📝\n\n**Date:** {year}-{month:02}-{day:02} 🎯";
+
+        let template =
+            "# 🗓️ Daily Note for {weekday} 📝\n\n**Date:** {year}-{month:02}-{day:02} 🎯";
         let result = engine.format(template);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert!(formatted.contains("🗓️"));
@@ -148,10 +148,10 @@ It's {weekday}, {month_name} {day} in the year {year}.
     fn test_multiple_same_variables() {
         let date = Utc.with_ymd_and_hms(2023, 6, 15, 10, 30, 0).unwrap();
         let engine = TemplateEngine::new(date);
-        
+
         let template = "{year} was a great year. In {year}, many things happened. The year {year} will be remembered.";
         let result = engine.format(template);
-        
+
         assert!(result.is_ok());
         let formatted = result.unwrap();
         assert_eq!(formatted, "2023 was a great year. In 2023, many things happened. The year 2023 will be remembered.");
@@ -161,7 +161,7 @@ It's {weekday}, {month_name} {day} in the year {year}.
     fn test_journal_template_realistic() {
         let date = Utc.with_ymd_and_hms(2023, 8, 20, 14, 30, 0).unwrap();
         let engine = TemplateEngine::new(date);
-        
+
         let journal_template = r#"---
 title: "{year}-{month:02}-{day:02}"
 type: daily
@@ -199,16 +199,16 @@ Created: {year}-{month:02}-{day:02} | Day: {weekday}
 
         let result = engine.format(journal_template);
         assert!(result.is_ok());
-        
+
         let formatted = result.unwrap();
-        
+
         // Verify that template was processed (don't check exact content since it might vary)
         assert!(!formatted.contains("{year}"));
         assert!(!formatted.contains("{month:02}"));
         assert!(!formatted.contains("{day:02}"));
         assert!(!formatted.contains("{weekday}"));
         assert!(!formatted.contains("{month_name}"));
-        
+
         // Verify basic structure is present
         assert!(formatted.contains("# 📅"));
         assert!(formatted.contains("## 🎯 Today's Focus"));

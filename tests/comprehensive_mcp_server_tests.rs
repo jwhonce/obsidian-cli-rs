@@ -3,9 +3,9 @@
 
 use obsidian_cli::mcp_server::*;
 use obsidian_cli::types::State;
-use tempfile::TempDir;
-use std::fs;
 use serde_json::json;
+use std::fs;
+use tempfile::TempDir;
 
 // Helper function to create a test state with MCP server
 fn create_test_state_for_mcp(temp_dir: &TempDir) -> State {
@@ -23,7 +23,12 @@ fn create_test_state_for_mcp(temp_dir: &TempDir) -> State {
 }
 
 // Helper function to create a test note
-fn create_test_note_for_mcp(vault_path: &std::path::Path, name: &str, frontmatter: &str, content: &str) {
+fn create_test_note_for_mcp(
+    vault_path: &std::path::Path,
+    name: &str,
+    frontmatter: &str,
+    content: &str,
+) {
     let file_path = vault_path.join(format!("{}.md", name));
     if let Some(parent) = file_path.parent() {
         fs::create_dir_all(parent).unwrap();
@@ -46,9 +51,9 @@ mod comprehensive_mcp_server_tests {
     async fn test_obsidian_mcp_server_creation() {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
-        
+
         let server = ObsidianMcpServer::new(state.clone());
-        
+
         // Verify server can be created (test basic functionality instead of private fields)
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
@@ -56,7 +61,7 @@ mod comprehensive_mcp_server_tests {
             method: "initialize".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
         assert!(response.result.is_some());
     }
@@ -66,21 +71,21 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(1)),
             method: "initialize".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert_eq!(response.jsonrpc, "2.0");
         assert_eq!(response.id, Some(json!(1)));
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         assert_eq!(result["protocolVersion"], "2024-11-05");
         assert!(result["capabilities"]["tools"].is_object());
@@ -93,21 +98,21 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(2)),
             method: "unknown_method".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert_eq!(response.jsonrpc, "2.0");
         assert_eq!(response.id, Some(json!(2)));
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert_eq!(error.code, -32601);
         assert_eq!(error.message, "Method not found");
@@ -120,25 +125,26 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(3)),
             method: "tools/list".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let tools = result["tools"].as_array().unwrap();
         assert!(!tools.is_empty());
-        
+
         // Check for expected tools
-        let tool_names: Vec<&str> = tools.iter()
+        let tool_names: Vec<&str> = tools
+            .iter()
             .map(|tool| tool["name"].as_str().unwrap())
             .collect();
         assert!(tool_names.contains(&"create_note"));
@@ -152,19 +158,19 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(4)),
             method: "tools/call".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert_eq!(error.code, -32602);
         assert_eq!(error.message, "Invalid params");
@@ -175,19 +181,19 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(5)),
             method: "tools/call".to_string(),
             params: Some(json!({"arguments": {}})),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert_eq!(error.code, -32602);
         assert_eq!(error.message, "Missing tool name");
@@ -198,7 +204,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(6)),
@@ -208,12 +214,12 @@ mod comprehensive_mcp_server_tests {
                 "arguments": {}
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert_eq!(error.code, -32601);
         assert!(error.message.contains("Unknown tool: unknown_tool"));
@@ -226,7 +232,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(7)),
@@ -240,16 +246,16 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         // Verify file was created
         let note_path = temp_dir.path().join("test-note.md");
         assert!(note_path.exists());
-        
+
         let content = fs::read_to_string(&note_path).unwrap();
         assert!(content.contains("This is test content"));
         // Note: UID is only added when content is empty, not when content is provided
@@ -260,7 +266,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(8)),
@@ -272,12 +278,12 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert!(error.message.contains("filename"));
     }
@@ -287,10 +293,15 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         // Create initial file
-        create_test_note_for_mcp(temp_dir.path(), "existing-note", "title: Original", "Original content");
-        
+        create_test_note_for_mcp(
+            temp_dir.path(),
+            "existing-note",
+            "title: Original",
+            "Original content",
+        );
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(9)),
@@ -304,12 +315,12 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         // Verify file was overwritten
         let note_path = temp_dir.path().join("existing-note.md");
         let content = fs::read_to_string(&note_path).unwrap();
@@ -324,11 +335,21 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         // Create test notes
-        create_test_note_for_mcp(temp_dir.path(), "findable-note", "title: Findable Note", "Content");
-        create_test_note_for_mcp(temp_dir.path(), "another-note", "title: Another Note", "Content");
-        
+        create_test_note_for_mcp(
+            temp_dir.path(),
+            "findable-note",
+            "title: Findable Note",
+            "Content",
+        );
+        create_test_note_for_mcp(
+            temp_dir.path(),
+            "another-note",
+            "title: Another Note",
+            "Content",
+        );
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(10)),
@@ -341,19 +362,22 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let content_array = result.as_array().unwrap();
         assert!(!content_array.is_empty());
-        
+
         let text_content = &content_array[0];
         assert_eq!(text_content["type"], "text");
-        assert!(text_content["text"].as_str().unwrap().contains("findable-note"));
+        assert!(text_content["text"]
+            .as_str()
+            .unwrap()
+            .contains("findable-note"));
     }
 
     #[tokio::test]
@@ -361,10 +385,20 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
-        create_test_note_for_mcp(temp_dir.path(), "exact-match", "title: Exact Match", "Content");
-        create_test_note_for_mcp(temp_dir.path(), "partial-exact", "title: Partial", "Content");
-        
+
+        create_test_note_for_mcp(
+            temp_dir.path(),
+            "exact-match",
+            "title: Exact Match",
+            "Content",
+        );
+        create_test_note_for_mcp(
+            temp_dir.path(),
+            "partial-exact",
+            "title: Partial",
+            "Content",
+        );
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(11)),
@@ -377,19 +411,25 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let content_array = result.as_array().unwrap();
         assert_eq!(content_array.len(), 1);
-        
+
         let text_content = &content_array[0];
-        assert!(text_content["text"].as_str().unwrap().contains("exact-match"));
-        assert!(!text_content["text"].as_str().unwrap().contains("partial-exact"));
+        assert!(text_content["text"]
+            .as_str()
+            .unwrap()
+            .contains("exact-match"));
+        assert!(!text_content["text"]
+            .as_str()
+            .unwrap()
+            .contains("partial-exact"));
     }
 
     #[tokio::test]
@@ -397,7 +437,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(12)),
@@ -409,12 +449,12 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert!(error.message.contains("term"));
     }
@@ -426,9 +466,14 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
-        create_test_note_for_mcp(temp_dir.path(), "content-note", "title: Content Note", "This is the note content");
-        
+
+        create_test_note_for_mcp(
+            temp_dir.path(),
+            "content-note",
+            "title: Content Note",
+            "This is the note content",
+        );
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(13)),
@@ -441,20 +486,26 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let content_array = result.as_array().unwrap();
         assert!(!content_array.is_empty());
-        
+
         let text_content = &content_array[0];
         assert_eq!(text_content["type"], "text");
-        assert!(text_content["text"].as_str().unwrap().contains("This is the note content"));
-        assert!(text_content["text"].as_str().unwrap().contains("title: Content Note"));
+        assert!(text_content["text"]
+            .as_str()
+            .unwrap()
+            .contains("This is the note content"));
+        assert!(text_content["text"]
+            .as_str()
+            .unwrap()
+            .contains("title: Content Note"));
     }
 
     #[tokio::test]
@@ -462,7 +513,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(14)),
@@ -474,19 +525,22 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         // MCP server returns success with error message in text content, not JSON-RPC error
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let content_array = result.as_array().unwrap();
         assert!(!content_array.is_empty());
-        
+
         let text_content = &content_array[0];
-        assert!(text_content["text"].as_str().unwrap().contains("File not found"));
+        assert!(text_content["text"]
+            .as_str()
+            .unwrap()
+            .contains("File not found"));
     }
 
     // === GET VAULT INFO TOOL TESTS ===
@@ -496,11 +550,11 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         // Create some test notes
         create_test_note_for_mcp(temp_dir.path(), "info-note-1", "title: Info 1", "Content");
         create_test_note_for_mcp(temp_dir.path(), "info-note-2", "title: Info 2", "Content");
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(15)),
@@ -510,16 +564,16 @@ mod comprehensive_mcp_server_tests {
                 "arguments": {}
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let content_array = result.as_array().unwrap();
         assert!(!content_array.is_empty());
-        
+
         let text_content = &content_array[0];
         assert_eq!(text_content["type"], "text");
         let info_text = text_content["text"].as_str().unwrap();
@@ -533,25 +587,28 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(16)),
             method: "resources/list".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let resources = result["resources"].as_array().unwrap();
         assert!(!resources.is_empty());
-        
+
         let resource = &resources[0];
-        assert!(resource["uri"].as_str().unwrap().contains("obsidian://vault/"));
+        assert!(resource["uri"]
+            .as_str()
+            .unwrap()
+            .contains("obsidian://vault/"));
         assert_eq!(resource["name"], "Obsidian Vault");
         assert_eq!(resource["mimeType"], "application/x-obsidian-vault");
     }
@@ -561,12 +618,17 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
-        create_test_note_for_mcp(temp_dir.path(), "resource-note", "title: Resource", "Resource content");
-        
+
+        create_test_note_for_mcp(
+            temp_dir.path(),
+            "resource-note",
+            "title: Resource",
+            "Resource content",
+        );
+
         let vault_path = temp_dir.path().display().to_string();
         let uri = format!("obsidian://vault/{}/resource-note.md", vault_path);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(17)),
@@ -575,19 +637,22 @@ mod comprehensive_mcp_server_tests {
                 "uri": uri
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let contents = result["contents"].as_array().unwrap();
         assert!(!contents.is_empty());
-        
+
         let content = &contents[0];
         assert_eq!(content["mimeType"], "text/markdown");
-        assert!(content["text"].as_str().unwrap().contains("Resource content"));
+        assert!(content["text"]
+            .as_str()
+            .unwrap()
+            .contains("Resource content"));
     }
 
     #[tokio::test]
@@ -595,19 +660,19 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(18)),
             method: "resources/read".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert_eq!(error.code, -32602);
         assert_eq!(error.message, "Invalid params");
@@ -618,19 +683,19 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(19)),
             method: "resources/read".to_string(),
             params: Some(json!({"not_uri": "value"})),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert_eq!(error.code, -32602);
         assert!(error.message.contains("Missing 'uri' parameter"));
@@ -641,7 +706,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(20)),
@@ -650,12 +715,12 @@ mod comprehensive_mcp_server_tests {
                 "uri": "https://example.com/unknown"
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_none());
         assert!(response.error.is_some());
-        
+
         let error = response.error.unwrap();
         assert_eq!(error.code, -32602);
         assert!(error.message.contains("Unknown resource URI"));
@@ -668,19 +733,19 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(21)),
             method: "prompts/list".to_string(),
             params: None,
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let prompts = result["prompts"].as_array().unwrap();
         assert!(prompts.is_empty()); // Currently returns empty array
@@ -690,12 +755,8 @@ mod comprehensive_mcp_server_tests {
 
     #[test]
     fn test_text_content_creation() {
-        let text_content = TextContent::new(
-            "Test content".to_string(),
-            "create",
-            "success"
-        );
-        
+        let text_content = TextContent::new("Test content".to_string(), "create", "success");
+
         assert_eq!(text_content.content_type, "text");
         assert_eq!(text_content.text, "Test content");
         assert_eq!(text_content.meta["operation"], "create");
@@ -712,7 +773,7 @@ mod comprehensive_mcp_server_tests {
             method: "test_method".to_string(),
             params: Some(json!({"key": "value"})),
         };
-        
+
         let serialized = serde_json::to_string(&request).unwrap();
         assert!(serialized.contains("test_method"));
         assert!(serialized.contains("\"id\":123"));
@@ -726,7 +787,7 @@ mod comprehensive_mcp_server_tests {
             result: Some(json!({"data": "test"})),
             error: None,
         };
-        
+
         let serialized = serde_json::to_string(&response).unwrap();
         assert!(serialized.contains("\"data\":\"test\""));
         assert!(serialized.contains("\"id\":456"));
@@ -740,7 +801,7 @@ mod comprehensive_mcp_server_tests {
             message: "Invalid Request".to_string(),
             data: Some(json!({"details": "additional info"})),
         };
-        
+
         let serialized = serde_json::to_string(&error).unwrap();
         assert!(serialized.contains("-32600"));
         assert!(serialized.contains("Invalid Request"));
@@ -754,7 +815,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(22)),
@@ -767,16 +828,16 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         // Verify nested file was created
         let note_path = temp_dir.path().join("nested/folder/deep-note.md");
         assert!(note_path.exists());
-        
+
         let content = fs::read_to_string(&note_path).unwrap();
         assert!(content.contains("Deep nested content"));
     }
@@ -786,7 +847,7 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(23)),
@@ -799,18 +860,21 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         let result = response.result.unwrap();
         let content_array = result.as_array().unwrap();
         assert_eq!(content_array.len(), 1);
-        
+
         let text_content = &content_array[0];
-        assert!(text_content["text"].as_str().unwrap().contains("No files found matching 'anything'"));
+        assert!(text_content["text"]
+            .as_str()
+            .unwrap()
+            .contains("No files found matching 'anything'"));
     }
 
     #[tokio::test]
@@ -818,9 +882,9 @@ mod comprehensive_mcp_server_tests {
         let temp_dir = TempDir::new().unwrap();
         let state = create_test_state_for_mcp(&temp_dir);
         let server = ObsidianMcpServer::new(state);
-        
+
         let unicode_content = "测试内容 🎌 ñáéíóú ✨ こんにちは";
-        
+
         let request = JsonRpcRequest {
             jsonrpc: "2.0".to_string(),
             id: Some(json!(24)),
@@ -833,12 +897,12 @@ mod comprehensive_mcp_server_tests {
                 }
             })),
         };
-        
+
         let response = server.handle_request(request).await;
-        
+
         assert!(response.result.is_some());
         assert!(response.error.is_none());
-        
+
         // Verify unicode content is preserved
         let note_path = temp_dir.path().join("unicode-test.md");
         let content = fs::read_to_string(&note_path).unwrap();

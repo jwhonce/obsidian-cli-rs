@@ -1,0 +1,12 @@
+# Test Configuration for Obsidian CLI
+# This configuration is used for testing purposes
+
+[vault]
+path = "test-vault"
+
+[templates]
+daily_note = "templates/daily.md"
+meeting_note = "templates/meeting.md"
+
+[journal]
+daily_format = "%Y-%m-%d"

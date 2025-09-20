@@ -1,0 +1,83 @@
+# Example Configuration for Obsidian CLI
+# Copy this file to ~/.config/obsidian-cli/config.toml or obsidian-cli.toml
+
+[vault]
+# Path to your Obsidian vault (can be relative or absolute)
+path = "~/Documents/ObsidianVault"
+
+# Default editor command (used by 'edit' command)
+editor = "code"  # or "vim", "nano", "subl", etc.
+
+[templates]
+# Template file paths (relative to vault root)
+daily_note = "templates/daily-note.md"
+meeting_note = "templates/meeting-note.md" 
+project_note = "templates/project-note.md"
+book_note = "templates/book-note.md"
+
+# Template directory
+template_dir = "templates"
+
+[journal]
+# Daily note configuration
+daily_format = "%Y-%m-%d"
+daily_template = "templates/daily-note.md"
+daily_dir = "Daily Notes"
+
+# Weekly note configuration  
+weekly_format = "%Y-W%U"
+weekly_template = "templates/weekly-note.md"
+weekly_dir = "Weekly Notes"
+
+# Monthly note configuration
+monthly_format = "%Y-%m"
+monthly_template = "templates/monthly-note.md"
+monthly_dir = "Monthly Notes"
+
+[search]
+# Default search behavior
+case_sensitive = false
+include_hidden = false
+
+# File type filtering
+include_extensions = [".md", ".txt"]
+exclude_extensions = [".pdf", ".png", ".jpg"]
+
+[output]
+# Default output format: table, json, yaml, plain
+format = "table"
+
+# Color output (auto, always, never)
+color = "auto"
+
+# Pager for long output (auto, always, never)
+pager = "auto"
+
+[mcp_server]
+# MCP server configuration
+host = "127.0.0.1"
+port = 3000
+
+# Logging level for MCP server
+log_level = "info"
+
+# Enable/disable specific tools
+[mcp_server.tools]
+list_files = true
+read_file = true
+write_file = true
+search_files = true
+get_frontmatter = true
+update_frontmatter = true
+
+[frontmatter]
+# Default frontmatter for new notes
+[frontmatter.defaults]
+tags = []
+created = "{{date}}"
+modified = "{{date}}"
+
+# Custom frontmatter fields
+[frontmatter.custom]
+author = "Your Name"
+status = "draft"

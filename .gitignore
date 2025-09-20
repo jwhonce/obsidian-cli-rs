@@ -1,0 +1,38 @@
+# Rust
+/target/
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Coverage reports
+target/coverage/
+*.profraw
+tarpaulin-report.html
+lcov.info
+
+# Test artifacts
+test-vault/
+temp_*
+*.tmp
+
+# Logs
+*.log
+
+# Backup files
+*.bak
+*~
+
+# Local config files
+local.toml

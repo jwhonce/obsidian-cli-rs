@@ -16,7 +16,7 @@ A high-performance command-line interface for interacting with Obsidian vaults, 
 - **🔧 Flexible Configuration**: TOML-based configuration with sensible defaults
 - **🤖 MCP Server**: Model Context Protocol server for AI assistant integration
 - **📊 Rich Output**: Professional table formatting with right-aligned numbers
-- **🧪 Enterprise-Grade Testing**: 241 tests across 12 test suites with 81.39% code coverage
+- **🧪 Enterprise-Grade Testing**: 269 tests across 15 test suites with 81.39% code coverage
 - **⚡ Cross-Platform**: Works on macOS, Linux, and Windows
 
 ## Installation
@@ -58,7 +58,7 @@ obsidian-cli --vault /path/to/vault query title --contains rust
 | `find` | | Find files by name or title (exact/fuzzy) |
 | `info` | | Display comprehensive vault information |
 | `journal` | | Open daily notes with templates |
-| `ls` | | List markdown files in the vault |
+| `ls` | | List markdown files with professional table formatting |
 | `meta` | `frontmatter` | View or update frontmatter metadata |
 | `new` | | Create new notes with frontmatter |
 | `query` | | Advanced frontmatter queries |
@@ -115,8 +115,11 @@ obsidian-cli rm "old-note"
 ### Searching and Querying
 
 ```bash
-# List all markdown files
+# List all markdown files  
 obsidian-cli ls
+
+# List files with creation and modification dates (professional table format)
+obsidian-cli ls --date
 
 # Find files by name (fuzzy search)
 obsidian-cli find "daily"
@@ -168,12 +171,50 @@ obsidian-cli query status --value published --style table
 # Use blacklist to exclude directories
 obsidian-cli --blacklist "Templates/:Archive/" ls
 
-# Get detailed vault information
+# Get detailed vault information with professional formatting
 obsidian-cli info
+
+# List files with dates in organized table format (new enhanced table view)
+obsidian-cli ls --date
 
 # Start MCP server for AI assistant integration
 obsidian-cli serve
 ```
+
+### Enhanced File Listing
+
+The `ls` command now provides professional table formatting when used with the `--date` option:
+
+```bash
+# Simple listing (unchanged)
+obsidian-cli ls
+meeting-notes.md
+project-ideas.md
+
+# Professional table format with dates and intelligent filename wrapping
+obsidian-cli ls --date
+```
+
+**Example Output:**
+
+```text
+Vault Files with Dates
+
+╭─────────────────────────────────────────┬─────────────┬─────────────╮
+│ File                                    │     Created │    Modified │
+├─────────────────────────────────────────┼─────────────┼─────────────┤
+│ meeting-notes.md                        │  2025-01-15 │  2025-01-16 │
+│ projects/documentation/architecture     │             │             │
+│ system-design.md                        │  2025-01-14 │  2025-01-16 │
+│ personal/journal/daily-reflections.md  │  2025-01-13 │  2025-01-15 │
+╰─────────────────────────────────────────┴─────────────┴─────────────╯
+```
+
+**Key Features:**
+
+- **Smart filename wrapping** - Long paths intelligently break at directory separators
+- **Professional formatting** - Clean UTF-8 table borders with proper alignment
+- **Date extraction** - Shows dates from frontmatter or falls back to filesystem timestamps
 
 ### MCP Server Integration
 
@@ -294,7 +335,7 @@ This Rust implementation is designed to be fully compatible with the Python vers
 - **Same CLI interface**: All commands and options work identically
 - **Same configuration format**: Uses the same TOML configuration files
 - **Same output format**: Produces identical output for all commands
-- **Enterprise testing**: 241 tests across 12 test suites with 81.39% coverage
+- **Enterprise testing**: 269 tests across 15 test suites with 81.39% coverage
 
 ## Performance
 
@@ -305,7 +346,8 @@ The Rust implementation provides significant performance improvements:
 - **Optimized template engine** with regex-based parsing for complex formats
 - **Lower memory usage** for large vaults with efficient string handling
 - **Instant startup time** compared to Python
-- **Professional table formatting** with right-aligned numbers
+- **Professional table formatting** with right-aligned columns and intelligent filename wrapping
+- **Advanced text processing** with path-aware filename wrapping for better readability
 - **Zero dependencies** single binary distribution
 
 ## Architecture
@@ -337,7 +379,7 @@ obsidian-cli-rs/
 │       ├── info.rs       # Vault information
 │       ├── rm.rs         # File removal
 │       └── serve.rs      # MCP server command
-├── tests/                # Enterprise test suite (241 tests, 81.39% coverage)
+├── tests/                # Enterprise test suite (269 tests, 81.39% coverage)
 │   ├── basic_tests.rs                        # Foundation tests
 │   ├── template_tests.rs                     # Template engine
 │   ├── simple_config_tests.rs                # Configuration
@@ -390,20 +432,31 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Changelog
 
-### v0.2.0 (2025-09-20)
+### v0.2.1 (Current)
+
+#### Recent Enhancements
+
+- **Professional Table Formatting**: Enhanced `ls --date` command with beautiful UTF-8 table output
+- **Intelligent Filename Wrapping**: Smart text wrapping at 40 characters with path-aware line breaks  
+- **Consistent Architecture**: Complete State→Vault parameter naming refactoring across codebase
+- **Enhanced Testing**: Expanded to 269 tests with comprehensive filename wrapping test coverage
+- **Utility Functions**: Moved `wrap_filename` to `utils.rs` for reuse across commands
+
+### v0.2.0 (2025-09-20)  
 
 #### Major Improvements
 
 - **Enterprise-Grade Testing**: Completely rewritten CI-safe test suite
-  - 241 tests across 12 specialized test suites 
+  - 269 tests across 15 specialized test suites
   - 81.39% code coverage (up from 45%)
   - Zero user input requirements - fully automated
   - Comprehensive error path and edge case testing
 
 - **Code Quality & Maintainability**:
   - `resolve_page_or_path!` macro for code deduplication across 5 commands
-  - Simplified Makefile: 325 → 141 lines (57% reduction) 
-  - Optimized `.gitignore` and `.cursorignore` with zero duplication
+  - Consistent `vault` parameter naming replacing legacy `state` terminology  
+  - Professional table formatting with `wrap_filename` utility for long paths
+  - Simplified Makefile: 325 → 141 lines (57% reduction)
   - Clean codebase with all compiler warnings eliminated
 
 - **Repository & Development**:

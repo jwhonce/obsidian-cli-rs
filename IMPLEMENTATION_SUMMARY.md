@@ -2,13 +2,13 @@
 
 This document summarizes the complete Rust implementation of the obsidian-cli project, providing the same functionality as the Python version with improved performance, reliability, and enterprise-grade testing infrastructure.
 
-## 📊 Current Status: v0.2.0
+## 📊 Current Status: v0.2.1
 
-- **Test Coverage**: 81.39% (241 tests across 12 test suites)
+- **Test Coverage**: 81.39% (269 tests across 15 test suites)
 - **Code Quality**: Zero warnings, clean compilation
 - **Repository**: Full Git setup with optimized ignore files  
 - **Development**: Streamlined Makefile (57% size reduction)
-- **Architecture**: Macro-based code deduplication implemented
+- **Architecture**: Macro-based code deduplication implemented with consistent vault parameter naming
 
 ## ✅ Completed Features
 
@@ -34,7 +34,7 @@ This document summarizes the complete Rust implementation of the obsidian-cli pr
 - ✅ `edit` - Open notes in configured editor with timestamp updates
 - ✅ `cat` - Display note contents with optional frontmatter
 - ✅ `rm` - Remove notes with confirmation prompts
-- ✅ `ls` - List markdown files respecting blacklist
+- ✅ `ls` - List markdown files with professional table formatting and intelligent filename wrapping
 
 #### Search and Discovery
 
@@ -82,8 +82,10 @@ This document summarizes the complete Rust implementation of the obsidian-cli pr
 - Colored terminal output with improved error message formatting
 - Professional table formatting with right-aligned numeric columns
 - JSON output support for scripting
-- Human-readable file sizes with direct humansize integration
+- Human-readable file sizes with direct humansize integration  
 - Enhanced table presentation for better data readability
+- Intelligent filename wrapping with path-aware line breaking at 40 characters
+- UTF-8 rounded corner table borders for polished appearance
 
 #### Performance Optimizations
 
@@ -182,7 +184,7 @@ obsidian-cli-rs/
 │       ├── info.rs       # Vault information
 │       ├── rm.rs         # File removal
 │       └── serve.rs      # MCP server command
-├── tests/                # Enterprise test suite (241 tests, 81.39% coverage)
+├── tests/                # Enterprise test suite (269 tests, 81.39% coverage)
 │   ├── basic_tests.rs                        # Foundation tests (7 tests)
 │   ├── template_tests.rs                     # Template engine (7 tests)
 │   ├── simple_config_tests.rs                # Configuration (29 tests)
@@ -207,7 +209,7 @@ obsidian-cli-rs/
 
 The implementation successfully achieves **81.39% code coverage**:
 
-- ✅ **241 comprehensive tests** across 12 specialized test suites
+- ✅ **269 comprehensive tests** across 15 specialized test suites
 - ✅ **CI-Safe Architecture**: Zero user input requirements
 - ✅ **Complete Coverage**: All commands, error paths, and edge cases tested
 - ✅ **Clean compilation** with zero warnings eliminated

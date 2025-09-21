@@ -1,9 +1,9 @@
 use crate::errors::Result;
 use crate::frontmatter;
 use crate::types::Vault;
+use crate::utils::{format_value, parse_value};
 use chrono::Utc;
 use colored::*;
-use serde_json::Value;
 use std::path::Path;
 
 pub async fn execute(
@@ -65,46 +65,3 @@ pub async fn execute(
     Ok(())
 }
 
-fn format_value(value: &Value) -> String {
-    match value {
-        Value::String(s) => s.clone(),
-        Value::Number(n) => n.to_string(),
-        Value::Bool(b) => b.to_string(),
-        Value::Array(arr) => format!(
-            "[{}]",
-            arr.iter().map(format_value).collect::<Vec<_>>().join(", ")
-        ),
-        Value::Object(_) => "{ object }".to_string(),
-        Value::Null => "null".to_string(),
-    }
-}
-
-fn parse_value(s: &str) -> Value {
-    // Try to parse as different types
-    if let Ok(b) = s.parse::<bool>() {
-        return Value::Bool(b);
-    }
-
-    if let Ok(n) = s.parse::<i64>() {
-        return Value::Number(serde_json::Number::from(n));
-    }
-
-    if let Ok(f) = s.parse::<f64>() {
-        if let Some(n) = serde_json::Number::from_f64(f) {
-            return Value::Number(n);
-        }
-    }
-
-    // Try to parse as array (simple comma-separated values)
-    if s.starts_with('[') && s.ends_with(']') {
-        let inner = &s[1..s.len() - 1];
-        let items: Vec<Value> = inner
-            .split(',')
-            .map(|item| Value::String(item.trim().to_string()))
-            .collect();
-        return Value::Array(items);
-    }
-
-    // Default to string
-    Value::String(s.to_string())
-}

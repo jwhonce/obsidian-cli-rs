@@ -255,3 +255,184 @@ pub fn launch_editor(editor: &str, file_path: &Path) -> Result<()> {
 
     Ok(())
 }
+
+/// Wrap filename at specified width, preferring to break at path separators
+pub fn wrap_filename(filename: &str, max_width: usize) -> String {
+    if filename.len() <= max_width {
+        return filename.to_string();
+    }
+    
+    let mut result = String::new();
+    let mut current_line = String::new();
+    
+    // Split by path separators first
+    let parts: Vec<&str> = filename.split('/').collect();
+    
+    for (i, part) in parts.iter().enumerate() {
+        let separator = if i == 0 { "" } else { "/" };
+        let part_with_separator = format!("{}{}", separator, part);
+        
+        // If adding this part would exceed the width, start a new line
+        if !current_line.is_empty() && current_line.len() + part_with_separator.len() > max_width {
+            result.push_str(&current_line);
+            result.push('\n');
+            current_line = part.to_string(); // Start new line without separator
+        } else {
+            current_line.push_str(&part_with_separator);
+        }
+        
+        // If even a single part is too long, break it within the part
+        if current_line.len() > max_width {
+            let mut temp_line = String::new();
+            for ch in current_line.chars() {
+                if temp_line.len() >= max_width {
+                    result.push_str(&temp_line);
+                    result.push('\n');
+                    temp_line = ch.to_string();
+                } else {
+                    temp_line.push(ch);
+                }
+            }
+            current_line = temp_line;
+        }
+    }
+    
+    // Add any remaining content
+    if !current_line.is_empty() {
+        result.push_str(&current_line);
+    }
+    
+    result
+}
+
+/// Extract created and modified dates from frontmatter or filesystem
+pub fn get_file_dates(file_path: &Path) -> (String, String) {
+    // Try to get dates from frontmatter first
+    if let Ok((frontmatter, _)) = frontmatter::parse_file(file_path) {
+        let created = extract_date_from_frontmatter(&frontmatter, "created")
+            .unwrap_or_else(|| get_filesystem_created_date(file_path));
+
+        let modified = extract_date_from_frontmatter(&frontmatter, "modified")
+            .unwrap_or_else(|| get_filesystem_modified_date(file_path));
+
+        (created, modified)
+    } else {
+        // Fallback to filesystem dates
+        (
+            get_filesystem_created_date(file_path),
+            get_filesystem_modified_date(file_path),
+        )
+    }
+}
+
+/// Extract date from frontmatter field and format as YYYY-MM-DD
+pub fn extract_date_from_frontmatter(
+    frontmatter: &HashMap<String, Value>,
+    field: &str,
+) -> Option<String> {
+    frontmatter.get(field).and_then(|value| {
+        match value {
+            Value::String(date_str) => {
+                // Try to parse ISO 8601 format (RFC3339)
+                if let Ok(datetime) = chrono::DateTime::parse_from_rfc3339(date_str) {
+                    Some(datetime.format("%Y-%m-%d").to_string())
+                } else if let Ok(naive_date) =
+                    chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+                {
+                    // Already in YYYY-MM-DD format
+                    Some(naive_date.format("%Y-%m-%d").to_string())
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    })
+}
+
+/// Get filesystem created date formatted as YYYY-MM-DD
+pub fn get_filesystem_created_date(file_path: &Path) -> String {
+    std::fs::metadata(file_path)
+        .and_then(|metadata| metadata.created())
+        .map(|time| {
+            let datetime: chrono::DateTime<chrono::Local> = time.into();
+            datetime.format("%Y-%m-%d").to_string()
+        })
+        .unwrap_or_else(|_| "unknown".to_string())
+}
+
+/// Get filesystem modified date formatted as YYYY-MM-DD
+pub fn get_filesystem_modified_date(file_path: &Path) -> String {
+    std::fs::metadata(file_path)
+        .and_then(|metadata| metadata.modified())
+        .map(|time| {
+            let datetime: chrono::DateTime<chrono::Local> = time.into();
+            datetime.format("%Y-%m-%d").to_string()
+        })
+        .unwrap_or_else(|_| "unknown".to_string())
+}
+
+/// Format a JSON value as a readable string
+pub fn format_value(value: &Value) -> String {
+    match value {
+        Value::String(s) => s.clone(),
+        Value::Number(n) => n.to_string(),
+        Value::Bool(b) => b.to_string(),
+        Value::Array(arr) => format!(
+            "[{}]",
+            arr.iter().map(format_value).collect::<Vec<_>>().join(", ")
+        ),
+        Value::Object(_) => "{ object }".to_string(),
+        Value::Null => "null".to_string(),
+    }
+}
+
+/// Parse a string into a JSON value with intelligent type detection
+pub fn parse_value(s: &str) -> Value {
+    // Try to parse as different types
+    if let Ok(b) = s.parse::<bool>() {
+        return Value::Bool(b);
+    }
+
+    if let Ok(n) = s.parse::<i64>() {
+        return Value::Number(serde_json::Number::from(n));
+    }
+
+    if let Ok(f) = s.parse::<f64>() {
+        if let Some(n) = serde_json::Number::from_f64(f) {
+            return Value::Number(n);
+        }
+    }
+
+    // Try to parse as array (simple comma-separated values)
+    if s.starts_with('[') && s.ends_with(']') {
+        let inner = &s[1..s.len() - 1];
+        let items: Vec<Value> = inner
+            .split(',')
+            .map(|item| Value::String(item.trim().to_string()))
+            .collect();
+        return Value::Array(items);
+    }
+
+    // Default to string
+    Value::String(s.to_string())
+}
+
+/// Check if a JSON value matches an expected string
+pub fn matches_value(metadata_value: &Value, expected: &str) -> bool {
+    match metadata_value {
+        Value::String(s) => s == expected,
+        Value::Number(n) => n.to_string() == expected,
+        Value::Bool(b) => b.to_string() == expected,
+        _ => format!("{}", metadata_value) == expected,
+    }
+}
+
+/// Check if a JSON value contains a specific string
+pub fn contains_value(metadata_value: &Value, contains_str: &str) -> bool {
+    match metadata_value {
+        Value::String(s) => s.contains(contains_str),
+        Value::Array(arr) => arr.iter().any(|v| contains_value(v, contains_str)),
+        _ => format!("{}", metadata_value).contains(contains_str),
+    }
+}

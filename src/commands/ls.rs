@@ -1,7 +1,11 @@
 use crate::errors::Result;
-use crate::frontmatter;
 use crate::types::Vault;
-use crate::utils::is_path_blacklisted;
+use crate::utils::{is_path_blacklisted, wrap_filename, get_file_dates};
+use colored::*;
+use comfy_table::{
+    modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, CellAlignment,
+    ContentArrangement, Table,
+};
 use walkdir::WalkDir;
 
 pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
@@ -24,16 +28,42 @@ pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
     files.sort();
 
     if show_dates {
+        if files.is_empty() {
+            println!("{}", "No markdown files found in vault".yellow());
+            return Ok(());
+        }
+
+        println!("{}", "Vault Files with Dates".bold().blue());
+        println!();
+
+        let mut table = Table::new();
+        table
+            .load_preset(UTF8_FULL)
+            .apply_modifier(UTF8_ROUND_CORNERS)
+            .set_content_arrangement(ContentArrangement::Dynamic)
+            .set_header(vec![
+                Cell::new("File").add_attribute(Attribute::Bold),
+                Cell::new("Created")
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Right),
+                Cell::new("Modified")
+                    .add_attribute(Attribute::Bold)
+                    .set_alignment(CellAlignment::Right),
+            ]);
+
         for file in files {
             let full_path = vault.path.join(&file);
             let (created, modified) = get_file_dates(&full_path);
-            println!(
-                "{:<40} created: {} modified: {}",
-                file.display(),
-                created,
-                modified
-            );
+            
+            let wrapped_filename = wrap_filename(&file.display().to_string(), 40);
+            table.add_row(vec![
+                Cell::new(wrapped_filename),
+                Cell::new(created).set_alignment(CellAlignment::Right),
+                Cell::new(modified).set_alignment(CellAlignment::Right),
+            ]);
         }
+
+        println!("{}", table);
     } else {
         for file in files {
             println!("{}", file.display());
@@ -43,69 +73,4 @@ pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
     Ok(())
 }
 
-/// Extract created and modified dates from frontmatter or filesystem
-fn get_file_dates(file_path: &std::path::Path) -> (String, String) {
-    // Try to get dates from frontmatter first
-    if let Ok((frontmatter, _)) = frontmatter::parse_file(file_path) {
-        let created = extract_date_from_frontmatter(&frontmatter, "created")
-            .unwrap_or_else(|| get_filesystem_created_date(file_path));
 
-        let modified = extract_date_from_frontmatter(&frontmatter, "modified")
-            .unwrap_or_else(|| get_filesystem_modified_date(file_path));
-
-        (created, modified)
-    } else {
-        // Fallback to filesystem dates
-        (
-            get_filesystem_created_date(file_path),
-            get_filesystem_modified_date(file_path),
-        )
-    }
-}
-
-/// Extract date from frontmatter field and format as YYYY-MM-DD
-fn extract_date_from_frontmatter(
-    frontmatter: &std::collections::HashMap<String, serde_json::Value>,
-    field: &str,
-) -> Option<String> {
-    frontmatter.get(field).and_then(|value| {
-        match value {
-            serde_json::Value::String(date_str) => {
-                // Try to parse ISO 8601 format (RFC3339)
-                if let Ok(datetime) = chrono::DateTime::parse_from_rfc3339(date_str) {
-                    Some(datetime.format("%Y-%m-%d").to_string())
-                } else if let Ok(naive_date) =
-                    chrono::NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-                {
-                    // Already in YYYY-MM-DD format
-                    Some(naive_date.format("%Y-%m-%d").to_string())
-                } else {
-                    None
-                }
-            }
-            _ => None,
-        }
-    })
-}
-
-/// Get filesystem created date formatted as YYYY-MM-DD
-fn get_filesystem_created_date(file_path: &std::path::Path) -> String {
-    std::fs::metadata(file_path)
-        .and_then(|metadata| metadata.created())
-        .map(|time| {
-            let datetime: chrono::DateTime<chrono::Local> = time.into();
-            datetime.format("%Y-%m-%d").to_string()
-        })
-        .unwrap_or_else(|_| "unknown".to_string())
-}
-
-/// Get filesystem modified date formatted as YYYY-MM-DD
-fn get_filesystem_modified_date(file_path: &std::path::Path) -> String {
-    std::fs::metadata(file_path)
-        .and_then(|metadata| metadata.modified())
-        .map(|time| {
-            let datetime: chrono::DateTime<chrono::Local> = time.into();
-            datetime.format("%Y-%m-%d").to_string()
-        })
-        .unwrap_or_else(|_| "unknown".to_string())
-}

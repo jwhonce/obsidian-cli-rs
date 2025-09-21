@@ -482,4 +482,62 @@ Content here.
             assert!(!files.is_empty(), "Should find file with name: {}", name);
         }
     }
+
+    #[test]
+    fn test_wrap_filename_short() {
+        use obsidian_cli::utils::wrap_filename;
+        let result = wrap_filename("short.md", 40);
+        assert_eq!(result, "short.md");
+    }
+
+    #[test]
+    fn test_wrap_filename_exact_length() {
+        use obsidian_cli::utils::wrap_filename;
+        let filename = "a".repeat(40);
+        let result = wrap_filename(&filename, 40);
+        assert_eq!(result, filename);
+    }
+
+    #[test]
+    fn test_wrap_filename_long_with_path() {
+        use obsidian_cli::utils::wrap_filename;
+        let filename = "very/long/directory/structure/with/deep/nested/files/example.md";
+        let result = wrap_filename(filename, 40);
+        let lines: Vec<&str> = result.split('\n').collect();
+        
+        // Should wrap into multiple lines
+        assert!(lines.len() > 1);
+        
+        // Each line should be <= 40 characters (except for parts that can't be broken)
+        for line in &lines {
+            assert!(line.len() <= 40 || !line.contains('/'));
+        }
+    }
+
+    #[test]
+    fn test_wrap_filename_breaks_at_separator() {
+        use obsidian_cli::utils::wrap_filename;
+        let filename = "documents/projects/obsidian-cli/src/commands/ls.rs";
+        let result = wrap_filename(filename, 25);
+        let lines: Vec<&str> = result.split('\n').collect();
+        
+        // Should break at path separators when possible
+        assert!(lines.len() > 1);
+        
+        // Verify it breaks intelligently
+        for line in &lines {
+            assert!(line.len() <= 25 || !line.contains('/'));
+        }
+    }
+
+    #[test]
+    fn test_wrap_filename_very_long_part() {
+        use obsidian_cli::utils::wrap_filename;
+        let filename = "normal/averyverylongfilenamethatcannotbebrokenatpathseparators.md";
+        let result = wrap_filename(filename, 20);
+        let lines: Vec<&str> = result.split('\n').collect();
+        
+        // Should still wrap even when individual parts are very long
+        assert!(lines.len() > 1);
+    }
 }

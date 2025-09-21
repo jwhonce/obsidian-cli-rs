@@ -1,7 +1,7 @@
 use crate::errors::Result;
 use crate::frontmatter;
 use crate::types::{OutputStyle, QueryResult, Vault};
-use crate::utils::is_path_blacklisted;
+use crate::utils::{is_path_blacklisted, format_value, matches_value, contains_value};
 use colored::*;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, ContentArrangement, Table,
@@ -144,22 +144,6 @@ pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     Ok(())
 }
 
-fn matches_value(metadata_value: &Value, expected: &str) -> bool {
-    match metadata_value {
-        Value::String(s) => s == expected,
-        Value::Number(n) => n.to_string() == expected,
-        Value::Bool(b) => b.to_string() == expected,
-        _ => format!("{}", metadata_value) == expected,
-    }
-}
-
-fn contains_value(metadata_value: &Value, contains_str: &str) -> bool {
-    match metadata_value {
-        Value::String(s) => s.contains(contains_str),
-        Value::Array(arr) => arr.iter().any(|v| contains_value(v, contains_str)),
-        _ => format!("{}", metadata_value).contains(contains_str),
-    }
-}
 
 fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str) {
     if matches.is_empty() {
@@ -209,7 +193,7 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
                     table.add_row(vec![
                         if first_row { path_str.as_ref() } else { "" },
                         k,
-                        &format_table_value(v),
+                        &format_value(v),
                     ]);
                     first_row = false;
                 }
@@ -253,19 +237,3 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
     }
 }
 
-fn format_table_value(value: &Value) -> String {
-    match value {
-        Value::String(s) => s.clone(),
-        Value::Number(n) => n.to_string(),
-        Value::Bool(b) => b.to_string(),
-        Value::Array(arr) => format!(
-            "[{}]",
-            arr.iter()
-                .map(format_table_value)
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
-        Value::Object(_) => "{ object }".to_string(),
-        Value::Null => "null".to_string(),
-    }
-}

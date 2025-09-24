@@ -2,6 +2,7 @@ use crate::errors::Result;
 use crate::frontmatter;
 use crate::types::{OutputStyle, QueryResult, Vault};
 use crate::utils::{contains_value, format_value, is_path_blacklisted, matches_value};
+use anyhow;
 use colored::*;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, ContentArrangement, Table,
@@ -106,7 +107,10 @@ pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
         }
 
         if has_key {
-            let metadata_value = frontmatter.get(options.key).unwrap();
+            let metadata_value = frontmatter.get(options.key)
+                .ok_or_else(|| crate::errors::ObsidianError::Config(anyhow::anyhow!(
+                    "Key '{}' unexpectedly missing from frontmatter", options.key
+                )))?;
 
             // Value filtering
             if let Some(expected_value) = options.value {
@@ -138,16 +142,16 @@ pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     if options.count {
         println!("Found {} matching files", matches.len());
     } else {
-        display_query_results(&matches, options.style, options.key);
+        display_query_results(&matches, options.style, options.key)?;
     }
 
     Ok(())
 }
 
-fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str) {
+fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str) -> Result<()> {
     if matches.is_empty() {
         eprintln!("{}", "No matching files found".yellow());
-        return;
+        return Ok(());
     }
 
     match style {
@@ -231,7 +235,12 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
                 })
                 .collect();
 
-            println!("{}", serde_json::to_string_pretty(&json_results).unwrap());
+            let json_output = serde_json::to_string_pretty(&json_results)
+                .map_err(|e| crate::errors::ObsidianError::Config(anyhow::anyhow!(
+                    "Failed to serialize query results to JSON: {}", e
+                )))?;
+            println!("{}", json_output);
         }
     }
+    Ok(())
 }

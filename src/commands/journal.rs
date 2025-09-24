@@ -9,17 +9,27 @@ use std::path::PathBuf;
 
 pub async fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
     let target_date = if let Some(date_str) = date {
-        NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+        let naive_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
             .map_err(|_| {
                 ObsidianError::TemplateFormatting(
                     "Invalid date format. Use ISO format YYYY-MM-DD.".to_string(),
                 )
-            })?
-            .and_hms_opt(0, 0, 0)
-            .unwrap()
-            .and_local_timezone(Local)
+            })?;
+        
+        let naive_datetime = naive_date.and_hms_opt(0, 0, 0)
+            .ok_or_else(|| {
+                ObsidianError::TemplateFormatting(
+                    "Failed to construct datetime from date".to_string(),
+                )
+            })?;
+        
+        naive_datetime.and_local_timezone(Local)
             .single()
-            .unwrap()
+            .ok_or_else(|| {
+                ObsidianError::TemplateFormatting(
+                    "Ambiguous or invalid timezone conversion for date".to_string(),
+                )
+            })?
     } else {
         Local::now()
     };

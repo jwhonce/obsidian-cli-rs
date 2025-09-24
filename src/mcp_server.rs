@@ -2,6 +2,7 @@ use crate::errors::{ObsidianError, Result};
 use crate::frontmatter;
 use crate::types::Vault;
 use crate::utils::is_path_blacklisted;
+use anyhow;
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -117,7 +118,10 @@ impl ObsidianMcpServer {
                 Ok(_) => {
                     if let Ok(request) = serde_json::from_str::<JsonRpcRequest>(&line) {
                         let response = self.handle_request(request).await;
-                        let response_json = serde_json::to_string(&response).unwrap();
+                        let response_json = serde_json::to_string(&response)
+                            .map_err(|e| ObsidianError::Config(anyhow::anyhow!(
+                                "Failed to serialize JSON response: {}", e
+                            )))?;
                         stdout
                             .write_all(response_json.as_bytes())
                             .await
@@ -620,7 +624,12 @@ impl ObsidianMcpServer {
             })?;
 
         if uri.starts_with("obsidian://vault/") {
-            let vault_path = uri.strip_prefix("obsidian://vault/").unwrap();
+            let vault_path = uri.strip_prefix("obsidian://vault/")
+                .ok_or_else(|| JsonRpcError {
+                    code: -32602,
+                    message: "Invalid vault URI format".to_string(),
+                    data: None,
+                })?;
             let full_path = self.vault.path.join(vault_path);
 
             let content = std::fs::read_to_string(&full_path).map_err(|e| JsonRpcError {

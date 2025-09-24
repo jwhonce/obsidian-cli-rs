@@ -23,9 +23,14 @@ pub async fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_
     
     // Determine if new_name is just a filename or a full path
     let new_name_path = Path::new(new_name);
-    if new_name_path.parent().is_some() && new_name_path.parent().unwrap() != Path::new("") {
-        // new_name contains directory components, treat as relative to vault
-        new_file_path = vault.path.join(new_name);
+    if let Some(parent) = new_name_path.parent() {
+        if parent != Path::new("") {
+            // new_name contains directory components, treat as relative to vault
+            new_file_path = vault.path.join(new_name);
+        } else {
+            // new_name is just a filename, keep in same directory
+            new_file_path.set_file_name(new_name);
+        }
     } else {
         // new_name is just a filename, keep in same directory
         new_file_path.set_file_name(new_name);

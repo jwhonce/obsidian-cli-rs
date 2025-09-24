@@ -155,8 +155,12 @@ impl TemplateEngine {
 
         // Process all matches and replace them
         for captures in re.captures_iter(template) {
-            let full_match = captures.get(0).unwrap();
-            let var_name = captures.get(1).unwrap().as_str();
+            let full_match = captures.get(0).ok_or_else(|| {
+                ObsidianError::TemplateFormatting("Regex match missing full capture".to_string())
+            })?;
+            let var_name = captures.get(1).ok_or_else(|| {
+                ObsidianError::TemplateFormatting("Regex match missing variable name".to_string())
+            })?.as_str();
             let format_spec = captures.get(2).map(|m| m.as_str());
 
             // Look up the variable

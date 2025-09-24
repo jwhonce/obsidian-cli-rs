@@ -117,7 +117,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -137,7 +137,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -157,7 +157,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -177,7 +177,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -205,7 +205,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -231,7 +231,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -257,7 +257,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -283,7 +283,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -311,7 +311,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -337,7 +337,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -363,7 +363,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -389,7 +389,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -417,7 +417,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -443,7 +443,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -470,7 +470,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -504,7 +504,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -535,7 +535,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -568,7 +568,7 @@ mod advanced_query_engine_tests {
             count: true,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -597,7 +597,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -616,7 +616,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -652,7 +652,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
         // The blacklisted file should be ignored
     }
@@ -684,7 +684,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -716,7 +716,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -749,7 +749,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -782,7 +782,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -812,7 +812,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -846,7 +846,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -890,7 +890,7 @@ mod advanced_query_engine_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 }

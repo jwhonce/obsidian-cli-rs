@@ -2,13 +2,13 @@ use crate::errors::{ObsidianError, Result};
 use crate::types::Vault;
 use crate::utils::{is_path_blacklisted, wrap_filename};
 use anyhow;
-use colored::*;
+use colored::Colorize;
 use regex::Regex;
 use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 
-pub async fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_links: bool) -> Result<()> {
+pub fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_links: bool) -> Result<()> {
     let old_file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
     
     // Validate that the source file exists
@@ -38,7 +38,7 @@ pub async fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_
     
     // Ensure the new filename has .md extension if the original did
     if old_file_path.extension().is_some_and(|ext| ext == "md") && 
-       new_file_path.extension().map_or(true, |ext| ext != "md") {
+       new_file_path.extension().is_none_or(|ext| ext != "md") {
         new_file_path.set_extension("md");
     }
 
@@ -76,13 +76,13 @@ pub async fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_
 
     // Update wiki links if requested
     if update_links {
-        update_wiki_links(vault, old_name, new_name_stem).await?;
+        update_wiki_links(vault, old_name, new_name_stem)?;
     }
 
     Ok(())
 }
 
-async fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Result<()> {
+fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Result<()> {
     println!("{} Searching for wiki links to update...", "🔍".blue().bold());
     
     // Create regex patterns for different wiki link formats
@@ -108,7 +108,7 @@ async fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Res
     for entry in WalkDir::new(&vault.path)
         .follow_links(false)
         .into_iter()
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
     {
         if entry.file_type().is_file() && entry.path().extension().is_some_and(|ext| ext == "md") {
             if let Ok(relative_path) = entry.path().strip_prefix(&vault.path) {
@@ -129,7 +129,7 @@ async fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Res
                                 format!("[[{}{}]]", new_name, suffix.as_str())
                             } else {
                                 // Simple [[old_name]] -> [[new_name]]
-                                format!("[[{}]]", new_name)
+                                format!("[[{new_name}]]")
                             }
                         });
                         

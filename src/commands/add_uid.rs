@@ -1,12 +1,12 @@
 use crate::errors::Result;
 use crate::frontmatter;
 use crate::types::Vault;
-use colored::*;
+use colored::Colorize;
 use serde_json::Value;
 use std::path::Path;
 use uuid::Uuid;
 
-pub async fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
+pub fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
     let file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
     let (frontmatter, _content) = frontmatter::parse_file(&file_path)?;
 

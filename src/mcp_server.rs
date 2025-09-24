@@ -56,6 +56,7 @@ pub struct TextContent {
 }
 
 impl TextContent {
+    #[must_use]
     pub fn new(text: String, operation: &str, status: &str) -> Self {
         let mut meta = HashMap::new();
         meta.insert(
@@ -71,6 +72,7 @@ impl TextContent {
         }
     }
 
+    #[must_use]
     pub fn with_metadata(
         text: String,
         operation: &str,
@@ -101,6 +103,7 @@ pub struct ObsidianMcpServer {
 }
 
 impl ObsidianMcpServer {
+    #[must_use]
     pub fn new(vault: Vault) -> Self {
         Self { vault }
     }
@@ -157,10 +160,10 @@ impl ObsidianMcpServer {
                     "version": "0.1.0"
                 }
             })),
-            "tools/list" => self.handle_tools_list().await,
+            "tools/list" => self.handle_tools_list(),
             "tools/call" => self.handle_tools_call(request.params).await,
-            "resources/list" => self.handle_resources_list().await,
-            "resources/read" => self.handle_resources_read(request.params).await,
+            "resources/list" => self.handle_resources_list(),
+            "resources/read" => self.handle_resources_read(request.params),
             "prompts/list" => Ok(json!({ "prompts": [] })),
             _ => Err(JsonRpcError {
                 code: -32601,
@@ -185,7 +188,7 @@ impl ObsidianMcpServer {
         }
     }
 
-    async fn handle_tools_list(&self) -> std::result::Result<Value, JsonRpcError> {
+    fn handle_tools_list(&self) -> std::result::Result<Value, JsonRpcError> {
         Ok(json!({
             "tools": [
                 {
@@ -286,19 +289,19 @@ impl ObsidianMcpServer {
         let arguments = params.get("arguments").unwrap_or(&default_args);
 
         match name {
-            "create_note" => self.handle_create_note(arguments).await,
-            "find_notes" => self.handle_find_notes(arguments).await,
-            "get_note_content" => self.handle_get_note_content(arguments).await,
-            "get_vault_info" => self.handle_get_vault_info().await,
+            "create_note" => self.handle_create_note(arguments),
+            "find_notes" => self.handle_find_notes(arguments),
+            "get_note_content" => self.handle_get_note_content(arguments),
+            "get_vault_info" => self.handle_get_vault_info(),
             _ => Err(JsonRpcError {
                 code: -32601,
-                message: format!("Unknown tool: {}", name),
+                message: format!("Unknown tool: {name}"),
                 data: None,
             }),
         }
     }
 
-    async fn handle_create_note(
+    fn handle_create_note(
         &self,
         arguments: &Value,
     ) -> std::result::Result<Value, JsonRpcError> {
@@ -318,14 +321,16 @@ impl ObsidianMcpServer {
 
         let force = arguments
             .get("force")
-            .and_then(|v| v.as_bool())
+            .and_then(serde_json::Value::as_bool)
             .unwrap_or(false);
 
         // Normalize filename for metadata
-        let normalized_filename = if filename.ends_with(".md") {
+        let normalized_filename = if std::path::Path::new(filename)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("md")) {
             filename.to_string()
         } else {
-            format!("{}.md", filename)
+            format!("{filename}.md")
         };
 
         let full_path = self.vault.path.join(&normalized_filename);
@@ -353,7 +358,7 @@ impl ObsidianMcpServer {
         if let Some(parent) = full_path.parent() {
             std::fs::create_dir_all(parent).map_err(|e| JsonRpcError {
                 code: -32603,
-                message: format!("Failed to create directory: {}", e),
+                message: format!("Failed to create directory: {e}"),
                 data: None,
             })?;
         }
@@ -365,7 +370,7 @@ impl ObsidianMcpServer {
             frontmatter::add_default_frontmatter(&mut fm, filename, &self.vault.ident_key);
             frontmatter::serialize_with_frontmatter(&fm, "").map_err(|e| JsonRpcError {
                 code: -32603,
-                message: format!("Failed to create frontmatter: {}", e),
+                message: format!("Failed to create frontmatter: {e}"),
                 data: None,
             })?
         } else {
@@ -374,7 +379,7 @@ impl ObsidianMcpServer {
 
         std::fs::write(&full_path, final_content).map_err(|e| JsonRpcError {
             code: -32603,
-            message: format!("Failed to create note: {}", e),
+            message: format!("Failed to create note: {e}"),
             data: None,
         })?;
 
@@ -385,7 +390,7 @@ impl ObsidianMcpServer {
         );
 
         let text_content = TextContent::with_metadata(
-            format!("Successfully created note: {}", normalized_filename),
+            format!("Successfully created note: {normalized_filename}"),
             "create_note",
             "success",
             meta,
@@ -394,7 +399,7 @@ impl ObsidianMcpServer {
         Ok(json!([text_content]))
     }
 
-    async fn handle_find_notes(
+    fn handle_find_notes(
         &self,
         arguments: &Value,
     ) -> std::result::Result<Value, JsonRpcError> {
@@ -409,14 +414,14 @@ impl ObsidianMcpServer {
 
         let exact = arguments
             .get("exact")
-            .and_then(|v| v.as_bool())
+            .and_then(serde_json::Value::as_bool)
             .unwrap_or(false);
 
         let matches =
             crate::utils::find_matching_files(&self.vault.path, term, exact).map_err(|e| {
                 JsonRpcError {
                     code: -32603,
-                    message: format!("Error finding notes: {}", e),
+                    message: format!("Error finding notes: {e}"),
                     data: None,
                 }
             })?;
@@ -432,7 +437,7 @@ impl ObsidianMcpServer {
 
         let text_content = if matches.is_empty() {
             TextContent::with_metadata(
-                format!("No files found matching '{}'", term),
+                format!("No files found matching '{term}'"),
                 "find_notes",
                 "success",
                 meta,
@@ -454,7 +459,7 @@ impl ObsidianMcpServer {
                 term,
                 file_list
                     .iter()
-                    .map(|f| format!("- {}", f))
+                    .map(|f| format!("- {f}"))
                     .collect::<Vec<_>>()
                     .join("\n")
             );
@@ -465,7 +470,7 @@ impl ObsidianMcpServer {
         Ok(json!([text_content]))
     }
 
-    async fn handle_get_note_content(
+    fn handle_get_note_content(
         &self,
         arguments: &Value,
     ) -> std::result::Result<Value, JsonRpcError> {
@@ -480,13 +485,15 @@ impl ObsidianMcpServer {
 
         let show_frontmatter = arguments
             .get("show_frontmatter")
-            .and_then(|v| v.as_bool())
+            .and_then(serde_json::Value::as_bool)
             .unwrap_or(false);
 
         // Try different file paths
         let mut full_path = self.vault.path.join(filename);
-        if !full_path.exists() && !filename.ends_with(".md") {
-            full_path = self.vault.path.join(format!("{}.md", filename));
+        if !full_path.exists() && !std::path::Path::new(filename)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("md")) {
+            full_path = self.vault.path.join(format!("{filename}.md"));
         }
 
         if !full_path.exists() {
@@ -499,7 +506,7 @@ impl ObsidianMcpServer {
             meta.insert("exit_code".to_string(), Value::String("2".to_string()));
 
             let text_content = TextContent::with_metadata(
-                format!("File not found: {}", filename),
+                format!("File not found: {filename}"),
                 "get_note_content",
                 "error",
                 meta,
@@ -510,7 +517,7 @@ impl ObsidianMcpServer {
 
         let content = std::fs::read_to_string(&full_path).map_err(|e| JsonRpcError {
             code: -32603,
-            message: format!("Failed to read file {}: {}", filename, e),
+            message: format!("Failed to read file {filename}: {e}"),
             data: None,
         })?;
 
@@ -537,13 +544,12 @@ impl ObsidianMcpServer {
         Ok(json!([text_content]))
     }
 
-    async fn handle_get_vault_info(&self) -> std::result::Result<Value, JsonRpcError> {
+    fn handle_get_vault_info(&self) -> std::result::Result<Value, JsonRpcError> {
         let vault_info = self
             .get_vault_info_for_mcp()
-            .await
             .map_err(|e| JsonRpcError {
                 code: -32603,
-                message: format!("Failed to get vault info: {}", e),
+                message: format!("Failed to get vault info: {e}"),
                 data: None,
             })?;
 
@@ -591,7 +597,7 @@ impl ObsidianMcpServer {
         Ok(json!([text_content]))
     }
 
-    async fn handle_resources_list(&self) -> std::result::Result<Value, JsonRpcError> {
+    fn handle_resources_list(&self) -> std::result::Result<Value, JsonRpcError> {
         Ok(json!({
             "resources": [
                 {
@@ -604,7 +610,7 @@ impl ObsidianMcpServer {
         }))
     }
 
-    async fn handle_resources_read(
+    fn handle_resources_read(
         &self,
         params: Option<Value>,
     ) -> std::result::Result<Value, JsonRpcError> {
@@ -634,7 +640,7 @@ impl ObsidianMcpServer {
 
             let content = std::fs::read_to_string(&full_path).map_err(|e| JsonRpcError {
                 code: -32603,
-                message: format!("Failed to read file {}: {}", vault_path, e),
+                message: format!("Failed to read file {vault_path}: {e}"),
                 data: None,
             })?;
 
@@ -648,14 +654,14 @@ impl ObsidianMcpServer {
         } else {
             Err(JsonRpcError {
                 code: -32602,
-                message: format!("Unknown resource URI: {}", uri),
+                message: format!("Unknown resource URI: {uri}"),
                 data: None,
             })
         }
     }
 
     // Helper method to get vault info as data structure for MCP
-    async fn get_vault_info_for_mcp(&self) -> Result<crate::types::VaultInfo> {
+    fn get_vault_info_for_mcp(&self) -> Result<crate::types::VaultInfo> {
         use crate::types::{FileTypeStat, VaultInfo};
         use std::collections::HashMap;
 

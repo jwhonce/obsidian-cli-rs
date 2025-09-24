@@ -47,7 +47,7 @@ mod command_integration_tests {
         create_test_note(temp_dir.path(), "note1", "title: Test Note 1", "Content 1");
         create_test_note(temp_dir.path(), "note2", "title: Test Note 2", "Content 2");
 
-        let result = info::execute(&vault).await;
+        let result = info::execute(&vault);
         assert!(result.is_ok());
     }
 
@@ -66,11 +66,11 @@ mod command_integration_tests {
         );
 
         // Test without dates
-        let result = ls::execute(&vault, false).await;
+        let result = ls::execute(&vault, false);
         assert!(result.is_ok());
 
         // Test with dates
-        let result = ls::execute(&vault, true).await;
+        let result = ls::execute(&vault, true);
         assert!(result.is_ok());
     }
 
@@ -90,11 +90,11 @@ mod command_integration_tests {
         let note_path = Path::new("cat-test.md");
 
         // Test without frontmatter
-        let result = cat::execute(&vault, note_path, false).await;
+        let result = cat::execute(&vault, note_path, false);
         assert!(result.is_ok());
 
         // Test with frontmatter
-        let result = cat::execute(&vault, note_path, true).await;
+        let result = cat::execute(&vault, note_path, true);
         assert!(result.is_ok());
     }
 
@@ -111,7 +111,7 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("no-ext-test"); // No .md extension
-        let result = cat::execute(&vault, note_path, false).await;
+        let result = cat::execute(&vault, note_path, false);
         assert!(result.is_ok());
     }
 
@@ -123,7 +123,7 @@ mod command_integration_tests {
         let new_file_path = Path::new("new-test-file");
 
         // Test creating new file
-        let result = new::execute(&vault, new_file_path, false).await;
+        let result = new::execute(&vault, new_file_path, false);
         assert!(result.is_ok());
         assert!(temp_dir.path().join("new-test-file.md").exists());
     }
@@ -139,7 +139,7 @@ mod command_integration_tests {
         create_test_note(temp_dir.path(), "existing-file", "", "Existing content");
 
         // Test overwriting with force
-        let result = new::execute(&vault, file_path, true).await;
+        let result = new::execute(&vault, file_path, true);
         assert!(result.is_ok());
         assert!(temp_dir.path().join("existing-file.md").exists());
     }
@@ -158,7 +158,7 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("no-uid.md");
-        let result = add_uid::execute(&vault, note_path, false).await;
+        let result = add_uid::execute(&vault, note_path, false);
         assert!(result.is_ok());
 
         // Verify UID was added
@@ -180,7 +180,7 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("has-uid.md");
-        let result = add_uid::execute(&vault, note_path, true).await;
+        let result = add_uid::execute(&vault, note_path, true);
         assert!(result.is_ok());
 
         // Verify UID was replaced
@@ -203,7 +203,7 @@ mod command_integration_tests {
         );
 
         let note_path = Path::new("edit-test.md");
-        let result = edit::execute(&vault, note_path).await;
+        let result = edit::execute(&vault, note_path);
 
         // Since we use "true" as mock editor, it should succeed without error
         assert!(result.is_ok());
@@ -229,11 +229,11 @@ mod command_integration_tests {
         );
 
         // Test exact search
-        let result = find::execute(&vault, "findable-note", true).await;
+        let result = find::execute(&vault, "findable-note", true);
         assert!(result.is_ok());
 
         // Test fuzzy search
-        let result = find::execute(&vault, "findable", false).await;
+        let result = find::execute(&vault, "findable", false);
         assert!(result.is_ok());
     }
 
@@ -253,7 +253,7 @@ mod command_integration_tests {
         let note_path = Path::new("meta-test.md");
 
         // Test listing all metadata
-        let result = meta::execute(&vault, note_path, None, None).await;
+        let result = meta::execute(&vault, note_path, None, None);
         assert!(result.is_ok());
     }
 
@@ -273,7 +273,7 @@ mod command_integration_tests {
         let note_path = Path::new("meta-get.md");
 
         // Test getting existing key
-        let result = meta::execute(&vault, note_path, Some("title"), None).await;
+        let result = meta::execute(&vault, note_path, Some("title"), None);
         assert!(result.is_ok());
     }
 
@@ -293,7 +293,7 @@ mod command_integration_tests {
         let note_path = Path::new("meta-set.md");
 
         // Test setting a key
-        let result = meta::execute(&vault, note_path, Some("status"), Some("published")).await;
+        let result = meta::execute(&vault, note_path, Some("status"), Some("published"));
         assert!(result.is_ok());
 
         // Verify the key was set
@@ -336,7 +336,7 @@ mod command_integration_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -364,7 +364,7 @@ mod command_integration_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -392,7 +392,7 @@ mod command_integration_tests {
             count: false,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -431,7 +431,7 @@ mod command_integration_tests {
             count: true,
         };
 
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -454,7 +454,7 @@ mod command_integration_tests {
         assert!(temp_dir.path().join("to-delete.md").exists());
 
         // Test removal with force (to avoid user input)
-        let result = rm::execute(&vault, note_path, true).await;
+        let result = rm::execute(&vault, note_path, true);
         assert!(result.is_ok());
 
         // Verify file was deleted
@@ -469,7 +469,7 @@ mod command_integration_tests {
         // Create Calendar directory structure
         fs::create_dir_all(temp_dir.path().join("Calendar")).unwrap();
 
-        let result = journal::execute(&vault, None).await;
+        let result = journal::execute(&vault, None);
         assert!(result.is_ok());
 
         // Check that some journal file was created in the Calendar structure
@@ -484,7 +484,7 @@ mod command_integration_tests {
         // Create Calendar directory structure
         fs::create_dir_all(temp_dir.path().join("Calendar")).unwrap();
 
-        let result = journal::execute(&vault, Some("2023-12-25")).await;
+        let result = journal::execute(&vault, Some("2023-12-25"));
         assert!(result.is_ok());
 
         // Check that the specific date structure was created
@@ -506,11 +506,11 @@ mod command_integration_tests {
         );
 
         // Test cat with nested path
-        let result = cat::execute(&vault, Path::new("Projects/Rust/notes.md"), false).await;
+        let result = cat::execute(&vault, Path::new("Projects/Rust/notes.md"), false);
         assert!(result.is_ok());
 
         // Test ls should find the nested structure
-        let result = ls::execute(&vault, false).await;
+        let result = ls::execute(&vault, false);
         assert!(result.is_ok());
     }
 
@@ -532,10 +532,10 @@ mod command_integration_tests {
         let note_path = Path::new(&note_filename);
 
         // Test various commands with unicode
-        let result = cat::execute(&vault, note_path, true).await;
+        let result = cat::execute(&vault, note_path, true);
         assert!(result.is_ok());
 
-        let result = meta::execute(&vault, note_path, None, None).await;
+        let result = meta::execute(&vault, note_path, None, None);
         assert!(result.is_ok());
     }
 
@@ -545,13 +545,13 @@ mod command_integration_tests {
         let vault = create_test_vault(&temp_dir);
 
         // Test operations on empty vault
-        let result = info::execute(&vault).await;
+        let result = info::execute(&vault);
         assert!(result.is_ok());
 
-        let result = ls::execute(&vault, false).await;
+        let result = ls::execute(&vault, false);
         assert!(result.is_ok());
 
-        let result = find::execute(&vault, "nonexistent", false).await;
+        let result = find::execute(&vault, "nonexistent", false);
         assert!(result.is_ok());
 
         // Query should handle empty vault gracefully
@@ -564,7 +564,7 @@ mod command_integration_tests {
             style: OutputStyle::Table,
             count: false,
         };
-        let result = query::execute(&vault, options).await;
+        let result = query::execute(&vault, options);
         assert!(result.is_ok());
     }
 
@@ -585,10 +585,10 @@ mod command_integration_tests {
         let note_path = Path::new("large-file.md");
 
         // Test commands with large content
-        let result = cat::execute(&vault, note_path, false).await;
+        let result = cat::execute(&vault, note_path, false);
         assert!(result.is_ok());
 
-        let result = add_uid::execute(&vault, note_path, false).await;
+        let result = add_uid::execute(&vault, note_path, false);
         assert!(result.is_ok());
     }
 

@@ -60,8 +60,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -79,8 +79,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -99,8 +99,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -120,8 +120,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     // === COMMAND DISPATCH TESTS ===
@@ -144,8 +144,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -169,8 +169,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -191,8 +191,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -211,8 +211,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -232,8 +232,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -253,8 +253,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -272,8 +272,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -292,8 +292,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -318,8 +318,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -338,8 +338,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -364,8 +364,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[tokio::test]
@@ -453,8 +453,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_ok());
+        let result = cli.run();
+        assert!(result.await.is_ok());
     }
 
     #[test]
@@ -538,8 +538,8 @@ mod essential_cli_tests {
         ];
 
         let cli = Cli::try_parse_from(args).unwrap();
-        let result = cli.run().await;
-        assert!(result.is_err());
+        let result = cli.run();
+        assert!(result.await.is_err());
     }
 
     #[test]

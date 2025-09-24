@@ -2,12 +2,12 @@ use crate::errors::Result;
 use crate::frontmatter;
 use crate::types::Vault;
 use crate::utils::launch_editor;
-use colored::*;
+use colored::Colorize;
 use std::collections::HashMap;
 use std::io::{self, Read};
 use std::path::Path;
 
-pub async fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
+pub fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
     let mut path = vault.path.join(page_or_path);
     if path.extension().is_none() {
         path.set_extension("md");
@@ -50,7 +50,7 @@ pub async fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<
         }
         buffer.trim().to_string()
     } else {
-        format!("# {}\n\n", title)
+        format!("# {title}\n\n")
     };
 
     frontmatter::add_default_frontmatter(&mut frontmatter, title, &vault.ident_key);

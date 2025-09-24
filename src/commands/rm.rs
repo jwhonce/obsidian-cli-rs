@@ -1,10 +1,10 @@
 use crate::errors::Result;
 use crate::types::Vault;
-use colored::*;
+use colored::Colorize;
 use std::io::{self, Write};
 use std::path::Path;
 
-pub async fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
+pub fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
     let file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
 
     if !force {

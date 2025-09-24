@@ -3,7 +3,7 @@ use crate::frontmatter;
 use crate::types::{OutputStyle, QueryResult, Vault};
 use crate::utils::{contains_value, format_value, is_path_blacklisted, matches_value};
 use anyhow;
-use colored::*;
+use colored::Colorize;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, ContentArrangement, Table,
 };
@@ -21,7 +21,7 @@ pub struct QueryOptions<'a> {
     pub count: bool,
 }
 
-pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
+pub fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     if options.value.is_some() && options.contains.is_some() {
         eprintln!(
             "{}",
@@ -33,10 +33,10 @@ pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     if vault.verbose {
         println!("Searching for frontmatter key: {}", options.key);
         if let Some(v) = options.value {
-            println!("Filtering for exact value: {}", v);
+            println!("Filtering for exact value: {v}");
         }
         if let Some(c) = options.contains {
-            println!("Filtering for substring: {}", c);
+            println!("Filtering for substring: {c}");
         }
         if options.exists {
             println!("Filtering for key existence");
@@ -50,7 +50,7 @@ pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     for entry in WalkDir::new(&vault.path)
         .follow_links(false)
         .into_iter()
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
     {
         if !entry.file_type().is_file() || entry.path().extension().is_none_or(|ext| ext != "md") {
             continue;
@@ -206,7 +206,7 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
                 }
             }
 
-            println!("{}", table);
+            println!("{table}");
             println!("Total matches: {}", matches.len());
         }
         OutputStyle::Json => {
@@ -239,7 +239,7 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
                 .map_err(|e| crate::errors::ObsidianError::Config(anyhow::anyhow!(
                     "Failed to serialize query results to JSON: {}", e
                 )))?;
-            println!("{}", json_output);
+            println!("{json_output}");
         }
     }
     Ok(())

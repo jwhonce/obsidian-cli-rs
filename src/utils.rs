@@ -375,7 +375,7 @@ pub fn get_filesystem_modified_date(file_path: &Path) -> String {
 /// Format a JSON value as a readable string
 pub fn format_value(value: &Value) -> String {
     match value {
-        Value::String(s) => s.clone(),
+        Value::String(s) => s.to_string(),
         Value::Number(n) => n.to_string(),
         Value::Bool(b) => b.to_string(),
         Value::Array(arr) => format!(
@@ -388,6 +388,7 @@ pub fn format_value(value: &Value) -> String {
 }
 
 /// Parse a string into a JSON value with intelligent type detection
+#[must_use]
 pub fn parse_value(s: &str) -> Value {
     // Try to parse as different types
     if let Ok(b) = s.parse::<bool>() {
@@ -419,20 +420,22 @@ pub fn parse_value(s: &str) -> Value {
 }
 
 /// Check if a JSON value matches an expected string
+#[must_use]
 pub fn matches_value(metadata_value: &Value, expected: &str) -> bool {
     match metadata_value {
         Value::String(s) => s == expected,
         Value::Number(n) => n.to_string() == expected,
         Value::Bool(b) => b.to_string() == expected,
-        _ => format!("{}", metadata_value) == expected,
+        _ => format!("{metadata_value}") == expected,
     }
 }
 
 /// Check if a JSON value contains a specific string
+#[must_use]
 pub fn contains_value(metadata_value: &Value, contains_str: &str) -> bool {
     match metadata_value {
         Value::String(s) => s.contains(contains_str),
         Value::Array(arr) => arr.iter().any(|v| contains_value(v, contains_str)),
-        _ => format!("{}", metadata_value).contains(contains_str),
+        _ => format!("{metadata_value}").contains(contains_str),
     }
 }

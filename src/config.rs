@@ -43,6 +43,7 @@ impl Config {
         paths
     }
 
+    #[must_use]
     pub fn get_editor(&self) -> String {
         self.editor
             .clone()
@@ -76,7 +77,7 @@ impl Config {
 
     pub fn resolve_vault_path(&self, vault_arg: Option<&Path>) -> Result<PathBuf> {
         let vault_path = vault_arg
-            .map(|p| p.to_path_buf())
+            .map(std::path::Path::to_path_buf)
             .or_else(|| self.vault.clone())
             .context("Vault path is required. Use --vault option, OBSIDIAN_VAULT environment variable, or specify 'vault' in configuration file.")?;
 
@@ -92,7 +93,7 @@ impl Config {
 
         let vault = expanded_path
             .canonicalize()
-            .with_context(|| format!("Cannot access vault directory: {}", expanded))?;
+            .with_context(|| format!("Cannot access vault directory: {expanded}"))?;
 
         if !vault.is_dir() {
             anyhow::bail!("Vault path must be a directory: {}", vault.display());

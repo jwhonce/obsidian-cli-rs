@@ -1,20 +1,20 @@
 use crate::errors::Result;
 use crate::types::Vault;
 use crate::utils::{get_file_dates, is_path_blacklisted, wrap_filename};
-use colored::*;
+use colored::Colorize;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, CellAlignment,
     ContentArrangement, Table,
 };
 use walkdir::WalkDir;
 
-pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
+pub fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
     let mut files = Vec::new();
 
     for entry in WalkDir::new(&vault.path)
         .follow_links(false)
         .into_iter()
-        .filter_map(|e| e.ok())
+        .filter_map(std::result::Result::ok)
     {
         if entry.file_type().is_file() && entry.path().extension().is_some_and(|ext| ext == "md") {
             if let Ok(relative_path) = entry.path().strip_prefix(&vault.path) {
@@ -63,7 +63,7 @@ pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
             ]);
         }
 
-        println!("{}", table);
+        println!("{table}");
     } else {
         for file in files {
             println!("{}", file.display());

@@ -3,10 +3,10 @@ use crate::frontmatter;
 use crate::types::Vault;
 use crate::utils::{format_value, parse_value};
 use chrono::Utc;
-use colored::*;
+use colored::Colorize;
 use std::path::Path;
 
-pub async fn execute(
+pub fn execute(
     vault: &Vault,
     page_or_path: &Path,
     key: Option<&str>,

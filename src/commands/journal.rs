@@ -3,11 +3,11 @@ use crate::frontmatter;
 use crate::types::Vault;
 use crate::utils::{format_journal_template, get_template_vars, launch_editor};
 use chrono::{Local, NaiveDate};
-use colored::*;
+use colored::Colorize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-pub async fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
+pub fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
     let target_date = if let Some(date_str) = date {
         let naive_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
             .map_err(|_| {
@@ -62,7 +62,7 @@ pub async fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
         let mut frontmatter = HashMap::new();
         frontmatter::add_default_frontmatter(&mut frontmatter, title, &vault.ident_key);
 
-        let content = format!("# {}\n\n", title);
+        let content = format!("# {title}\n\n");
         let serialized = frontmatter::serialize_with_frontmatter(&frontmatter, &content)?;
         std::fs::write(&full_path, serialized)?;
 

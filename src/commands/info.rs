@@ -1,14 +1,14 @@
 use crate::errors::Result;
 use crate::types::Vault;
 use crate::utils::get_vault_info;
-use colored::*;
+use colored::Colorize;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, CellAlignment,
     ContentArrangement, Table,
 };
 use humansize::{format_size, DECIMAL};
 
-pub async fn execute(vault: &Vault) -> Result<()> {
+pub fn execute(vault: &Vault) -> Result<()> {
     let vault_info = get_vault_info(vault)?;
 
     println!("{}", "OBSIDIAN VAULT INFORMATION".bold().blue());
@@ -41,7 +41,7 @@ pub async fn execute(vault: &Vault) -> Result<()> {
             Cell::new(vault_info.total_files.to_string()).set_alignment(CellAlignment::Right),
         ]);
 
-    println!("{}", summary_table);
+    println!("{summary_table}");
     println!();
 
     // File Types Table
@@ -105,7 +105,7 @@ pub async fn execute(vault: &Vault) -> Result<()> {
                 .set_alignment(CellAlignment::Right),
         ]);
 
-        println!("{}", file_table);
+        println!("{file_table}");
         println!();
     } else {
         println!("{}", "No files found in vault".yellow());
@@ -152,7 +152,7 @@ pub async fn execute(vault: &Vault) -> Result<()> {
             Cell::new(&vault_info.version).set_alignment(CellAlignment::Right),
         ]);
 
-    println!("{}", config_table);
+    println!("{config_table}");
 
     Ok(())
 }

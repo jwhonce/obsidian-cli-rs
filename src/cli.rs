@@ -1,4 +1,4 @@
-use crate::commands::*;
+use crate::commands::{add_uid, cat, edit, find, info, journal, ls, meta, new, query, rename, rm, serve};
 use crate::config::Config;
 use crate::errors::Result;
 use crate::types::Vault;
@@ -194,25 +194,25 @@ impl Cli {
             Commands::AddUid {
                 page_or_path,
                 force,
-            } => add_uid::execute(&vault, &page_or_path, force).await,
+            } => add_uid::execute(&vault, &page_or_path, force),
             Commands::Cat {
                 page_or_path,
                 show_frontmatter,
-            } => cat::execute(&vault, &page_or_path, show_frontmatter).await,
-            Commands::Edit { page_or_path } => edit::execute(&vault, &page_or_path).await,
-            Commands::Find { page_name, exact } => find::execute(&vault, &page_name, exact).await,
-            Commands::Info => info::execute(&vault).await,
-            Commands::Journal { date } => journal::execute(&vault, date.as_deref()).await,
-            Commands::Ls { date } => ls::execute(&vault, date).await,
+            } => cat::execute(&vault, &page_or_path, show_frontmatter),
+            Commands::Edit { page_or_path } => edit::execute(&vault, &page_or_path),
+            Commands::Find { page_name, exact } => find::execute(&vault, &page_name, exact),
+            Commands::Info => info::execute(&vault),
+            Commands::Journal { date } => journal::execute(&vault, date.as_deref()),
+            Commands::Ls { date } => ls::execute(&vault, date),
             Commands::Meta {
                 page_or_path,
                 key,
                 value,
-            } => meta::execute(&vault, &page_or_path, key.as_deref(), value.as_deref()).await,
+            } => meta::execute(&vault, &page_or_path, key.as_deref(), value.as_deref()),
             Commands::New {
                 page_or_path,
                 force,
-            } => new::execute(&vault, &page_or_path, force).await,
+            } => new::execute(&vault, &page_or_path, force),
             Commands::Query {
                 key,
                 value,
@@ -231,17 +231,17 @@ impl Cli {
                     style: style.into(),
                     count,
                 };
-                query::execute(&vault, options).await
+                query::execute(&vault, options)
             }
             Commands::Rename {
                 page_or_path,
                 new_name,
                 link,
-            } => rename::execute(&vault, &page_or_path, &new_name, link).await,
+            } => rename::execute(&vault, &page_or_path, &new_name, link),
             Commands::Rm {
                 page_or_path,
                 force,
-            } => rm::execute(&vault, &page_or_path, force).await,
+            } => rm::execute(&vault, &page_or_path, force),
             Commands::Serve => serve::execute(&vault).await,
         }
     }

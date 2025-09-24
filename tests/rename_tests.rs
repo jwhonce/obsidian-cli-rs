@@ -28,7 +28,7 @@ async fn test_rename_simple_file() {
     fs::write(&test_file, "# Test Content\nThis is a test file.").unwrap();
 
     // Rename the file
-    let result = rename::execute(&vault, &test_file, "new_name.md", false).await;
+    let result = rename::execute(&vault, &test_file, "new_name.md", false);
     assert!(result.is_ok());
 
     // Check that old file doesn't exist
@@ -55,7 +55,7 @@ async fn test_rename_with_subdirectory() {
     fs::write(&test_file, "# Test Content").unwrap();
 
     // Rename to subdirectory
-    let result = rename::execute(&vault, &test_file, "subdir/new_name.md", false).await;
+    let result = rename::execute(&vault, &test_file, "subdir/new_name.md", false);
     assert!(result.is_ok());
 
     // Check that old file doesn't exist
@@ -75,7 +75,7 @@ async fn test_rename_auto_add_md_extension() {
     fs::write(&test_file, "# Test Content").unwrap();
 
     // Rename without .md extension
-    let result = rename::execute(&vault, &test_file, "new_name", false).await;
+    let result = rename::execute(&vault, &test_file, "new_name", false);
     assert!(result.is_ok());
 
     // Check that new file has .md extension
@@ -95,7 +95,7 @@ async fn test_rename_with_wiki_links() {
     fs::write(&linking_file, "# Linking File\n\nThis links to [[old_name]] and also [[old_name|display text]].\n\nAlso see [[old_name#section]].").unwrap();
 
     // Rename with link updating
-    let result = rename::execute(&vault, &old_file, "new_name.md", true).await;
+    let result = rename::execute(&vault, &old_file, "new_name.md", true);
     assert!(result.is_ok());
 
     // Check that the linking file was updated
@@ -112,7 +112,7 @@ async fn test_rename_file_not_found() {
 
     // Try to rename non-existent file
     let non_existent = vault.path.join("does_not_exist.md");
-    let result = rename::execute(&vault, &non_existent, "new_name.md", false).await;
+    let result = rename::execute(&vault, &non_existent, "new_name.md", false);
     
     assert!(result.is_err());
     let error_msg = format!("{}", result.unwrap_err());
@@ -131,7 +131,7 @@ async fn test_rename_target_exists() {
     fs::write(&target_file, "Target content").unwrap();
 
     // Try to rename to existing file
-    let result = rename::execute(&vault, &source_file, "target.md", false).await;
+    let result = rename::execute(&vault, &source_file, "target.md", false);
     
     assert!(result.is_err());
     let error_msg = format!("{}", result.unwrap_err());
@@ -150,7 +150,7 @@ async fn test_rename_complex_wiki_links() {
     fs::write(&linking_file, "# Complex Links\n\n[[complex_name]] simple link\n[[complex_name|Custom Display]] with display\n[[complex_name#intro]] with section\n[[complex_name#section|Display]] with both\n\nNot affected: [[other_file]] and [[complex_name_extended]].").unwrap();
 
     // Rename with link updating
-    let result = rename::execute(&vault, &old_file, "renamed_complex.md", true).await;
+    let result = rename::execute(&vault, &old_file, "renamed_complex.md", true);
     assert!(result.is_ok());
 
     // Check that links were updated correctly

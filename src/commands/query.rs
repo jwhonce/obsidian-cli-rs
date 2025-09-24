@@ -1,7 +1,7 @@
 use crate::errors::Result;
 use crate::frontmatter;
 use crate::types::{OutputStyle, QueryResult, Vault};
-use crate::utils::{is_path_blacklisted, format_value, matches_value, contains_value};
+use crate::utils::{contains_value, format_value, is_path_blacklisted, matches_value};
 use colored::*;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, ContentArrangement, Table,
@@ -144,7 +144,6 @@ pub async fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     Ok(())
 }
 
-
 fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str) {
     if matches.is_empty() {
         eprintln!("{}", "No matching files found".yellow());
@@ -236,4 +235,3 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
         }
     }
 }
-

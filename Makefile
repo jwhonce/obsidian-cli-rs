@@ -23,14 +23,18 @@ help:
 	@echo "  clean               Clean build artifacts"
 	@echo ""
 	@echo "Development:"
-	@echo "  build               Build the project"
+	@echo "  build               Build the project (debug mode)"
+	@echo "  release             Build the project (release mode, optimized)"
 	@echo "  run                 Run the CLI (pass ARGS='...' for arguments)"
-	@echo "  install             Install the binary locally"
+	@echo "  install             Install the binary locally (debug mode)"
+	@echo "  install-release     Install the binary locally (release mode)"
 	@echo "  quality             Run fmt + lint + check + test"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make coverage        # Generate HTML coverage report"
 	@echo "  make quality         # Full quality check"
+	@echo "  make release         # Build optimized release binary"
+	@echo "  make install-release # Install optimized release version"
 	@echo "  make run ARGS='--help'  # Run CLI with --help"
 
 # Testing targets
@@ -108,8 +112,14 @@ clean:
 # Build targets
 .PHONY: build
 build:
-	@echo "Building project..."
+	@echo "Building project (debug mode)..."
 	$(CARGO) build
+
+.PHONY: release
+release:
+	@echo "Building project (release mode, optimized)..."
+	$(CARGO) build --release
+	@echo "Release binary built at: target/release/obsidian-cli"
 
 .PHONY: run
 run: build
@@ -118,7 +128,12 @@ run: build
 
 .PHONY: install
 install:
-	@echo "Installing obsidian-cli..."
+	@echo "Installing obsidian-cli (debug mode)..."
+	$(CARGO) install --path . --debug
+
+.PHONY: install-release
+install-release:
+	@echo "Installing obsidian-cli (release mode, optimized)..."
 	$(CARGO) install --path .
 
 # Combined targets

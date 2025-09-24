@@ -20,4 +20,4 @@ pub use config::Config;
 pub use errors::{ObsidianError, Result};
 // Re-export frontmatter functions for backward compatibility
 pub use frontmatter::*;
-pub use types::{Vault, TemplateVars, VaultInfo};
+pub use types::{TemplateVars, Vault, VaultInfo};

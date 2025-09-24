@@ -1,6 +1,6 @@
 use crate::errors::Result;
 use crate::types::Vault;
-use crate::utils::{is_path_blacklisted, wrap_filename, get_file_dates};
+use crate::utils::{get_file_dates, is_path_blacklisted, wrap_filename};
 use colored::*;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, CellAlignment,
@@ -54,7 +54,7 @@ pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
         for file in files {
             let full_path = vault.path.join(&file);
             let (created, modified) = get_file_dates(&full_path);
-            
+
             let wrapped_filename = wrap_filename(&file.display().to_string(), 40);
             table.add_row(vec![
                 Cell::new(wrapped_filename),
@@ -72,5 +72,3 @@ pub async fn execute(vault: &Vault, show_dates: bool) -> Result<()> {
 
     Ok(())
 }
-
-

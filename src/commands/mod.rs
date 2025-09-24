@@ -8,5 +8,6 @@ pub mod ls;
 pub mod meta;
 pub mod new;
 pub mod query;
+pub mod rename;
 pub mod rm;
 pub mod serve;

@@ -1,7 +1,7 @@
 use crate::errors::{ObsidianError, Result};
 use crate::frontmatter;
 use crate::template;
-use crate::types::{FileTypeStat, Vault, TemplateVars, VaultInfo};
+use crate::types::{FileTypeStat, TemplateVars, Vault, VaultInfo};
 use chrono::{DateTime, Datelike, Local};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
@@ -261,17 +261,17 @@ pub fn wrap_filename(filename: &str, max_width: usize) -> String {
     if filename.len() <= max_width {
         return filename.to_string();
     }
-    
+
     let mut result = String::new();
     let mut current_line = String::new();
-    
+
     // Split by path separators first
     let parts: Vec<&str> = filename.split('/').collect();
-    
+
     for (i, part) in parts.iter().enumerate() {
         let separator = if i == 0 { "" } else { "/" };
         let part_with_separator = format!("{}{}", separator, part);
-        
+
         // If adding this part would exceed the width, start a new line
         if !current_line.is_empty() && current_line.len() + part_with_separator.len() > max_width {
             result.push_str(&current_line);
@@ -280,7 +280,7 @@ pub fn wrap_filename(filename: &str, max_width: usize) -> String {
         } else {
             current_line.push_str(&part_with_separator);
         }
-        
+
         // If even a single part is too long, break it within the part
         if current_line.len() > max_width {
             let mut temp_line = String::new();
@@ -296,12 +296,12 @@ pub fn wrap_filename(filename: &str, max_width: usize) -> String {
             current_line = temp_line;
         }
     }
-    
+
     // Add any remaining content
     if !current_line.is_empty() {
         result.push_str(&current_line);
     }
-    
+
     result
 }
 

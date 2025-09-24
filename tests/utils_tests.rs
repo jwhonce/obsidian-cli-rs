@@ -504,10 +504,10 @@ Content here.
         let filename = "very/long/directory/structure/with/deep/nested/files/example.md";
         let result = wrap_filename(filename, 40);
         let lines: Vec<&str> = result.split('\n').collect();
-        
+
         // Should wrap into multiple lines
         assert!(lines.len() > 1);
-        
+
         // Each line should be <= 40 characters (except for parts that can't be broken)
         for line in &lines {
             assert!(line.len() <= 40 || !line.contains('/'));
@@ -520,10 +520,10 @@ Content here.
         let filename = "documents/projects/obsidian-cli/src/commands/ls.rs";
         let result = wrap_filename(filename, 25);
         let lines: Vec<&str> = result.split('\n').collect();
-        
+
         // Should break at path separators when possible
         assert!(lines.len() > 1);
-        
+
         // Verify it breaks intelligently
         for line in &lines {
             assert!(line.len() <= 25 || !line.contains('/'));
@@ -536,7 +536,7 @@ Content here.
         let filename = "normal/averyverylongfilenamethatcannotbebrokenatpathseparators.md";
         let result = wrap_filename(filename, 20);
         let lines: Vec<&str> = result.split('\n').collect();
-        
+
         // Should still wrap even when individual parts are very long
         assert!(lines.len() > 1);
     }

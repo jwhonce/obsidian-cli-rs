@@ -135,6 +135,16 @@ pub enum Commands {
         #[arg(long)]
         count: bool,
     },
+    /// Rename a file and optionally update wiki links
+    Rename {
+        /// Obsidian page name or Path to file to rename
+        page_or_path: PathBuf,
+        /// New name for the file
+        new_name: String,
+        /// Search and update wiki links to the renamed file
+        #[arg(short, long)]
+        link: bool,
+    },
     /// Remove a file from the vault
     Rm {
         /// Obsidian page name or Path to file
@@ -223,6 +233,11 @@ impl Cli {
                 };
                 query::execute(&vault, options).await
             }
+            Commands::Rename {
+                page_or_path,
+                new_name,
+                link,
+            } => rename::execute(&vault, &page_or_path, &new_name, link).await,
             Commands::Rm {
                 page_or_path,
                 force,

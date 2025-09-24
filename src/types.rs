@@ -36,7 +36,7 @@ pub struct QueryResult {
 }
 
 /// Represents an Obsidian vault with its configuration and metadata.
-/// 
+///
 /// This struct contains all the necessary information to operate on an Obsidian vault,
 /// including the vault path, configuration settings, and operational parameters.
 #[derive(Debug, Clone)]
@@ -67,7 +67,7 @@ pub struct TemplateVars {
 }
 
 /// Information about an Obsidian vault including statistics and configuration.
-/// 
+///
 /// This struct is used to provide comprehensive information about a vault,
 /// including file counts, sizes, and configuration details.
 #[derive(Debug, Clone, Serialize, Deserialize)]

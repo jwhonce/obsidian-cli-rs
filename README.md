@@ -2,8 +2,8 @@
 
 A high-performance command-line interface for interacting with Obsidian vaults, written in Rust. This implementation provides the same functionality as the [Python obsidian-cli](../obsidian-cli) with improved performance and reliability.
 
-[![Test Coverage](https://img.shields.io/badge/coverage-81.39%25-brightgreen.svg)](https://github.com/jhonce/obsidian-cli-rs)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/jhonce/obsidian-cli-rs)
+[![Test Coverage](https://img.shields.io/badge/coverage-67.37%25-yellow.svg)](https://github.com/jhonce/obsidian-cli-rs)
+[![Version](https://img.shields.io/badge/version-0.1.1-blue.svg)](https://github.com/jhonce/obsidian-cli-rs)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 ## Features
@@ -16,7 +16,9 @@ A high-performance command-line interface for interacting with Obsidian vaults, 
 - **🔧 Flexible Configuration**: TOML-based configuration with sensible defaults
 - **🤖 MCP Server**: Model Context Protocol server for AI assistant integration
 - **📊 Rich Output**: Professional table formatting with right-aligned numbers
-- **🧪 Enterprise-Grade Testing**: 269 tests across 15 test suites with 81.39% code coverage
+- **🏗️ Modern Architecture**: Builder patterns, newtype safety, and granular error handling
+- **⚡ Performance Optimizations**: String allocation optimization with Cow<str> and reduced cloning
+- **🧪 Enterprise-Grade Testing**: 534 tests across 30 test suites with 67.37% code coverage
 - **⚡ Cross-Platform**: Works on macOS, Linux, and Windows
 
 ## Installation
@@ -62,8 +64,10 @@ obsidian-cli --vault /path/to/vault query title --contains rust
 | `meta` | `frontmatter` | View or update frontmatter metadata |
 | `new` | | Create new notes with frontmatter |
 | `query` | | Advanced frontmatter queries |
+| `rename` | | Rename files and optionally update wiki links |
 | `rm` | | Remove notes from the vault |
 | `serve` | | Start MCP server for AI assistant integration |
+| `version` | | Show version information |
 
 ## Configuration
 
@@ -110,6 +114,12 @@ obsidian-cli cat "meeting-notes"
 
 # Remove a note (with confirmation)
 obsidian-cli rm "old-note"
+
+# Rename a note
+obsidian-cli rename "old-name" "new-name"
+
+# Rename a note and update wiki links
+obsidian-cli rename "old-name" "new-name" --link
 ```
 
 ### Searching and Querying
@@ -179,6 +189,11 @@ obsidian-cli ls --date
 
 # Start MCP server for AI assistant integration
 obsidian-cli serve
+
+# Show version information
+obsidian-cli version
+obsidian-cli --version
+obsidian-cli -V
 ```
 
 ### Enhanced File Listing
@@ -299,7 +314,7 @@ make quality
 
 ### Testing
 
-The project includes enterprise-grade testing infrastructure with 81.39% code coverage:
+The project includes enterprise-grade testing infrastructure with 67.37% code coverage:
 
 ```bash
 # Run all tests
@@ -335,7 +350,7 @@ This Rust implementation is designed to be fully compatible with the Python vers
 - **Same CLI interface**: All commands and options work identically
 - **Same configuration format**: Uses the same TOML configuration files
 - **Same output format**: Produces identical output for all commands
-- **Enterprise testing**: 269 tests across 15 test suites with 81.39% coverage
+- **Enterprise testing**: 534 tests across 30 test suites with 67.37% coverage
 
 ## Performance
 
@@ -375,11 +390,12 @@ obsidian-cli-rs/
 │       ├── meta.rs       # Metadata management (alias: frontmatter)
 │       ├── add_uid.rs    # UID generation
 │       ├── query.rs      # Advanced queries
+│       ├── rename.rs     # File renaming with link updates
 │       ├── journal.rs    # Journal operations
 │       ├── info.rs       # Vault information
 │       ├── rm.rs         # File removal
 │       └── serve.rs      # MCP server command
-├── tests/                # Enterprise test suite (269 tests, 81.39% coverage)
+├── tests/                # Enterprise test suite (534 tests, 67.37% coverage)
 │   ├── basic_tests.rs                        # Foundation tests
 │   ├── template_tests.rs                     # Template engine
 │   ├── simple_config_tests.rs                # Configuration
@@ -391,7 +407,23 @@ obsidian-cli-rs/
 │   ├── advanced_query_engine_tests.rs        # Query engine
 │   ├── essential_cli_tests.rs                # CLI integration
 │   ├── config_tests.rs                       # Advanced config
-│   └── utils_tests.rs                        # Utility edge cases
+│   ├── utils_tests.rs                        # Utility edge cases
+│   ├── rename_tests.rs                       # File renaming tests
+│   ├── version_command_tests.rs              # Version command tests
+│   ├── builder_pattern_tests.rs              # Builder pattern tests
+│   ├── newtype_pattern_tests.rs              # Newtype safety tests
+│   ├── error_types_tests.rs                  # Granular error handling
+│   ├── optimization_coverage_tests.rs        # Performance optimizations
+│   ├── types_tests.rs                        # Type system tests
+│   ├── add_uid_command_tests.rs              # UID command tests
+│   ├── basic_command_coverage_tests.rs       # Basic command coverage
+│   ├── meta_command_coverage_tests.rs        # Meta command tests
+│   ├── info_command_tests.rs                 # Info command tests
+│   ├── journal_command_tests.rs              # Journal command tests
+│   ├── mcp_server_coverage_tests.rs          # MCP server coverage
+│   ├── config_error_handling_tests.rs        # Config error handling
+│   ├── cli_builder_integration_tests.rs      # CLI builder integration
+│   └── remaining_coverage_tests.rs           # Additional coverage
 ├── Cargo.toml                    # Dependencies & metadata
 ├── Makefile                      # Development workflow automation
 ├── MCP_COMPATIBILITY_REPORT.md   # MCP server compatibility verification
@@ -432,61 +464,40 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## Changelog
 
-### v0.2.1 (Current)
+### v0.1.1 (Current)
 
-#### Recent Enhancements
+#### New Features
 
-- **Professional Table Formatting**: Enhanced `ls --date` command with beautiful UTF-8 table output
-- **Intelligent Filename Wrapping**: Smart text wrapping at 40 characters with path-aware line breaks  
-- **Consistent Architecture**: Complete State→Vault parameter naming refactoring across codebase
-- **Enhanced Testing**: Expanded to 269 tests with comprehensive filename wrapping test coverage
-- **Utility Functions**: Moved `wrap_filename` to `utils.rs` for reuse across commands
+- **Version Command**: Added `version` command and `--version`/`-V` flags for easy version checking
+- **File Renaming**: New `rename` command with optional wiki link updating using `--link` flag
+- **Enhanced Testing**: Expanded test suite to 534 tests across 30 specialized test suites
 
-### v0.2.0 (2025-09-20)  
+#### Architecture Improvements
 
-#### Major Improvements
+- **Builder Patterns**: Implemented builder patterns for `Vault`, `QueryOptions`, and `TemplateVars` construction
+- **Newtype Safety**: Added type-safe wrappers for `IdentKey`, `JournalTemplate`, `EditorCommand`, and `BlacklistPattern`
+- **Granular Error Handling**: Introduced `ConfigError`, `VaultError`, and `TemplateError` for better error specificity
+- **Performance Optimizations**: String allocation optimization with `Cow<str>` and reduced cloning throughout
 
-- **Enterprise-Grade Testing**: Completely rewritten CI-safe test suite
-  - 269 tests across 15 specialized test suites
-  - 81.39% code coverage (up from 45%)
-  - Zero user input requirements - fully automated
-  - Comprehensive error path and edge case testing
+#### Code Quality & Reliability
 
-- **Code Quality & Maintainability**:
-  - `resolve_page_or_path!` macro for code deduplication across 5 commands
-  - Consistent `vault` parameter naming replacing legacy `state` terminology  
-  - Professional table formatting with `wrap_filename` utility for long paths
-  - Simplified Makefile: 325 → 141 lines (57% reduction)
-  - Clean codebase with all compiler warnings eliminated
+- **Modern Architecture**: Builder patterns provide fluent, type-safe APIs
+- **Error Granularity**: Specific error types with detailed error messages and proper exit codes
+- **String Optimization**: `Cow<str>` usage for optimal memory allocation in filename operations
+- **Comprehensive Testing**: 67.37% test coverage with specialized test suites for each major component
 
-- **Repository & Development**:
-  - Full Git repository setup with professional structure
-  - Comprehensive documentation updates reflecting current state
-  - Enhanced development workflow with streamlined Makefile targets
+#### Developer Experience
 
-#### Test Architecture Overhaul
-
-- **CI-Safe Foundation**: All tests run without user interaction
-- **Specialized Test Suites**: 
-  - `comprehensive_mcp_server_tests.rs` (29 tests) - MCP protocol compliance
-  - `advanced_query_engine_tests.rs` (29 tests) - Query engine functionality  
-  - `essential_cli_tests.rs` (22 tests) - CLI integration
-  - `config_tests.rs` (18 tests) - Configuration handling
-  - Plus 8 additional specialized test modules
-
-#### Technical Enhancements
-
-- **Improved Error Handling**: Robust frontmatter parsing and file operations
-- **Enhanced Template Engine**: Comprehensive format specifier support
-- **Optimized Path Resolution**: Macro-based deduplication pattern
-- **Professional Output**: Better table formatting and error messages
+- **Rust Formatting**: Applied `rustfmt` across entire codebase for consistent styling
+- **Professional CI**: Enhanced test infrastructure with specialized coverage for all new features
+- **Documentation**: Updated README with current capabilities and architectural improvements
 
 ### v0.1.0 (2025-01-19)
 
 #### Core Features
 
 - Initial Rust implementation with full Python version parity
-- All 12 commands implemented (`add-uid`, `cat`, `edit`, `find`, `info`, `journal`, `ls`, `meta`/`frontmatter`, `new`, `query`, `rm`, `serve`)
+- All core commands implemented (`add-uid`, `cat`, `edit`, `find`, `info`, `journal`, `ls`, `meta`/`frontmatter`, `new`, `query`, `rm`, `serve`)
 - Cross-platform support (macOS, Linux, Windows)
 
 #### Template Engine
@@ -503,7 +514,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 - Four core tools: `create_note`, `find_notes`, `get_note_content`, `get_vault_info`
 - Full compatibility with Python MCP server
 - JSON-RPC 2.0 over stdio protocol
-- Comprehensive test coverage (17 MCP-specific tests)
+- Comprehensive test coverage
 
 #### Frontmatter Processing
 
@@ -521,14 +532,14 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 #### Performance & Quality
 
-- **79+ comprehensive tests** ensuring reliability
+- **Enterprise-grade testing** ensuring reliability
 - Optimized string handling and memory usage
 - Clean architecture with consistent command patterns
 - Single binary distribution with zero dependencies
 
 #### Technical Improvements
 
-- Moved architecture to consistent command patterns
+- Consistent command patterns architecture
 - Enhanced test organization with dedicated test modules
 - Comprehensive Python compatibility verification
 - Clean compilation with all warnings resolved

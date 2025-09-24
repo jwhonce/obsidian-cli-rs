@@ -2,7 +2,7 @@
 //! Tests path operations, file matching, and template utilities
 
 use chrono::Local;
-use obsidian_cli::{utils::*, Vault};
+use obsidian_cli::{types::BlacklistPattern, utils::*, Vault};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
@@ -14,21 +14,18 @@ mod utils_tests {
     fn create_test_vault(temp_dir: &TempDir) -> Vault {
         Vault {
             path: temp_dir.path().to_path_buf(),
-            blacklist: vec![".obsidian".to_string(), "*.tmp".to_string()],
-            editor: "echo".to_string(),
-            ident_key: "uid".to_string(),
-            journal_template: "# Daily {year}-{month:02}-{day:02}".to_string(),
+            blacklist: vec![".obsidian".to_string().into(), "*.tmp".to_string().into()],
+            editor: "echo".to_string().into(),
+            ident_key: "uid".to_string().into(),
+            journal_template: "# Daily {year}-{month:02}-{day:02}".to_string().into(),
             verbose: false,
         }
     }
 
     #[test]
     fn test_is_path_blacklisted_basic() {
-        let blacklist = vec![
-            ".obsidian".to_string(),
-            "*.tmp".to_string(),
-            "node_modules".to_string(),
-        ];
+        let blacklist: Vec<BlacklistPattern> =
+            vec![".obsidian".into(), "*.tmp".into(), "node_modules".into()];
 
         assert!(is_path_blacklisted(
             Path::new(".obsidian/config.json"),
@@ -48,11 +45,8 @@ mod utils_tests {
 
     #[test]
     fn test_is_path_blacklisted_patterns() {
-        let blacklist = vec![
-            "*.log".to_string(),
-            "temp*".to_string(),
-            "*cache*".to_string(),
-        ];
+        let blacklist: Vec<BlacklistPattern> =
+            vec!["*.log".into(), "temp*".into(), "*cache*".into()];
 
         assert!(is_path_blacklisted(Path::new("error.log"), &blacklist));
         assert!(is_path_blacklisted(Path::new("temp_file.txt"), &blacklist));
@@ -376,13 +370,13 @@ type: journal
 
     #[test]
     fn test_complex_blacklist_patterns() {
-        let patterns = vec![
-            "*.log".to_string(),
-            "**/node_modules/**".to_string(),
-            ".git".to_string(),
-            "build/*".to_string(),
-            "*.tmp".to_string(),
-            "cache*".to_string(),
+        let patterns: Vec<BlacklistPattern> = vec![
+            "*.log".into(),
+            "**/node_modules/**".into(),
+            ".git".into(),
+            "build/*".into(),
+            "*.tmp".into(),
+            "cache*".into(),
         ];
 
         // Should be blacklisted

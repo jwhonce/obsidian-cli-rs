@@ -158,9 +158,14 @@ impl TemplateEngine {
             let full_match = captures.get(0).ok_or_else(|| {
                 ObsidianError::TemplateFormatting("Regex match missing full capture".to_string())
             })?;
-            let var_name = captures.get(1).ok_or_else(|| {
-                ObsidianError::TemplateFormatting("Regex match missing variable name".to_string())
-            })?.as_str();
+            let var_name = captures
+                .get(1)
+                .ok_or_else(|| {
+                    ObsidianError::TemplateFormatting(
+                        "Regex match missing variable name".to_string(),
+                    )
+                })?
+                .as_str();
             let format_spec = captures.get(2).map(|m| m.as_str());
 
             // Look up the variable

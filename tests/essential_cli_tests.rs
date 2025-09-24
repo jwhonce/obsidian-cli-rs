@@ -480,10 +480,10 @@ mod essential_cli_tests {
         let editor = config.get_editor();
         let vault = Vault {
             path: vault_path.to_path_buf(),
-            blacklist: config.blacklist,
-            editor,
-            ident_key: config.ident_key,
-            journal_template: config.journal_template,
+            blacklist: config.blacklist.into_iter().map(|s| s.into()).collect(),
+            editor: editor.into(),
+            ident_key: config.ident_key.into(),
+            journal_template: config.journal_template.into(),
             verbose: false,
         };
 

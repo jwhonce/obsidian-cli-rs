@@ -13,10 +13,10 @@ mod simple_utils_tests {
     fn create_test_vault(temp_dir: &TempDir) -> Vault {
         Vault {
             path: temp_dir.path().to_path_buf(),
-            blacklist: vec![".obsidian".to_string()],
-            editor: "echo".to_string(),
-            ident_key: "uid".to_string(),
-            journal_template: "# Daily".to_string(),
+            blacklist: vec![".obsidian".to_string().into()],
+            editor: "echo".to_string().into(),
+            ident_key: "uid".to_string().into(),
+            journal_template: "# Daily".to_string().into(),
             verbose: false,
         }
     }

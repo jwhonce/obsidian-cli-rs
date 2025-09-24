@@ -1,4 +1,5 @@
-use anyhow::{Context, Result};
+use crate::errors::{ConfigError, Result, VaultError};
+use crate::types::{BlacklistPattern, EditorCommand, IdentKey, JournalTemplate};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
@@ -8,13 +9,44 @@ fn default_ident_key() -> String {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default)]
     pub blacklist: Vec<String>,
     pub editor: Option<String>,
     #[serde(default = "default_ident_key")]
     pub ident_key: String,
+    #[serde(default)]
     pub journal_template: String,
     pub vault: Option<PathBuf>,
+    #[serde(default)]
     pub verbose: bool,
+}
+
+/// Configuration with type-safe wrappers
+#[derive(Debug, Clone)]
+pub struct TypedConfig {
+    pub blacklist: Vec<BlacklistPattern>,
+    pub editor: Option<EditorCommand>,
+    pub ident_key: IdentKey,
+    pub journal_template: JournalTemplate,
+    pub vault: Option<PathBuf>,
+    pub verbose: bool,
+}
+
+impl From<Config> for TypedConfig {
+    fn from(config: Config) -> Self {
+        Self {
+            blacklist: config
+                .blacklist
+                .into_iter()
+                .map(BlacklistPattern::from)
+                .collect(),
+            editor: config.editor.map(EditorCommand::from),
+            ident_key: IdentKey::from(config.ident_key),
+            journal_template: JournalTemplate::from(config.journal_template),
+            vault: config.vault,
+            verbose: config.verbose,
+        }
+    }
 }
 
 impl Config {
@@ -45,10 +77,13 @@ impl Config {
 
     #[must_use]
     pub fn get_editor(&self) -> String {
-        self.editor
-            .clone()
-            .or_else(|| std::env::var("EDITOR").ok())
-            .unwrap_or_else(|| "vi".to_string())
+        if let Some(editor) = &self.editor {
+            editor.clone()
+        } else if let Ok(env_editor) = std::env::var("EDITOR") {
+            env_editor
+        } else {
+            "vi".to_string()
+        }
     }
 
     pub fn load() -> Result<Self> {
@@ -56,8 +91,7 @@ impl Config {
 
         for path in &config_paths {
             if path.exists() {
-                return Self::load_from_path(path)
-                    .with_context(|| format!("Failed to parse config file: {}", path.display()));
+                return Self::load_from_path(path).map_err(|e| e.into());
             }
         }
 
@@ -65,12 +99,10 @@ impl Config {
         Ok(Self::default())
     }
 
-    pub fn load_from_path(path: &Path) -> Result<Self> {
-        let contents = std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read config file {}", path.display()))?;
+    pub fn load_from_path(path: &Path) -> std::result::Result<Self, ConfigError> {
+        let contents = std::fs::read_to_string(path).map_err(ConfigError::IoError)?;
 
-        let config: Self = toml::from_str(&contents)
-            .with_context(|| format!("Failed to parse TOML in config file {}", path.display()))?;
+        let config: Self = toml::from_str(&contents).map_err(ConfigError::InvalidToml)?;
 
         Ok(config)
     }
@@ -79,32 +111,39 @@ impl Config {
         let vault_path = vault_arg
             .map(std::path::Path::to_path_buf)
             .or_else(|| self.vault.clone())
-            .context("Vault path is required. Use --vault option, OBSIDIAN_VAULT environment variable, or specify 'vault' in configuration file.")?;
+            .ok_or_else(|| ConfigError::MissingField {
+                field: "vault".to_string(),
+            })?;
 
         let expanded = shellexpand::full(&vault_path.to_string_lossy())
-            .context("Failed to expand vault path")?
+            .map_err(|_| ConfigError::PathExpansion {
+                path: format!("{}", vault_path.display()),
+            })?
             .into_owned();
 
         let expanded_path = PathBuf::from(&expanded);
 
         if !expanded_path.exists() {
-            anyhow::bail!("Vault directory does not exist: {}\nMake sure the vault path in your configuration is correct.", expanded);
+            return Err(VaultError::NotFound { path: expanded }.into());
         }
 
         let vault = expanded_path
             .canonicalize()
-            .with_context(|| format!("Cannot access vault directory: {expanded}"))?;
+            .map_err(|_| VaultError::AccessDenied { path: expanded })?;
 
         if !vault.is_dir() {
-            anyhow::bail!("Vault path must be a directory: {}", vault.display());
+            return Err(VaultError::NotDirectory {
+                path: format!("{}", vault.display()),
+            }
+            .into());
         }
 
         let obsidian_dir = vault.join(".obsidian");
         if !obsidian_dir.exists() {
-            anyhow::bail!(
-                "Invalid Obsidian vault: missing .obsidian directory in {}\nMake sure this is a valid Obsidian vault.", 
-                vault.display()
-            );
+            return Err(VaultError::InvalidVault {
+                path: format!("{}", vault.display()),
+            }
+            .into());
         }
 
         Ok(vault)
@@ -125,5 +164,11 @@ impl Default for Config {
             vault: None,
             verbose: false,
         }
+    }
+}
+
+impl Default for TypedConfig {
+    fn default() -> Self {
+        Config::default().into()
     }
 }

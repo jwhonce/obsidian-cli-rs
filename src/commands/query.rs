@@ -1,8 +1,7 @@
-use crate::errors::Result;
+use crate::errors::{ConfigError, Result};
 use crate::frontmatter;
 use crate::types::{OutputStyle, QueryResult, Vault};
 use crate::utils::{contains_value, format_value, is_path_blacklisted, matches_value};
-use anyhow;
 use colored::Colorize;
 use comfy_table::{
     modifiers::UTF8_ROUND_CORNERS, presets::UTF8_FULL, Attribute, Cell, ContentArrangement, Table,
@@ -21,13 +20,113 @@ pub struct QueryOptions<'a> {
     pub count: bool,
 }
 
+/// Builder for constructing QueryOptions with fluent API
+#[derive(Debug)]
+pub struct QueryOptionsBuilder<'a> {
+    key: Option<&'a str>,
+    value: Option<&'a str>,
+    contains: Option<&'a str>,
+    exists: bool,
+    missing: bool,
+    style: OutputStyle,
+    count: bool,
+}
+
+impl<'a> Default for QueryOptionsBuilder<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<'a> QueryOptionsBuilder<'a> {
+    /// Create a new QueryOptionsBuilder
+    pub fn new() -> Self {
+        Self {
+            key: None,
+            value: None,
+            contains: None,
+            exists: false,
+            missing: false,
+            style: OutputStyle::Path,
+            count: false,
+        }
+    }
+
+    /// Set the key to search for
+    pub fn key(mut self, key: &'a str) -> Self {
+        self.key = Some(key);
+        self
+    }
+
+    /// Set the exact value to match
+    pub fn value(mut self, value: &'a str) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    /// Set the substring to search for in values
+    pub fn contains(mut self, contains: &'a str) -> Self {
+        self.contains = Some(contains);
+        self
+    }
+
+    /// Only return files where the key exists
+    pub fn exists(mut self, exists: bool) -> Self {
+        self.exists = exists;
+        self
+    }
+
+    /// Only return files where the key is missing
+    pub fn missing(mut self, missing: bool) -> Self {
+        self.missing = missing;
+        self
+    }
+
+    /// Set the output style
+    pub fn style(mut self, style: OutputStyle) -> Self {
+        self.style = style;
+        self
+    }
+
+    /// Enable count mode (show counts instead of listing files)
+    pub fn count(mut self, count: bool) -> Self {
+        self.count = count;
+        self
+    }
+
+    /// Build the QueryOptions instance
+    pub fn build(self) -> std::result::Result<QueryOptions<'a>, &'static str> {
+        let key = self.key.ok_or("Key is required for query")?;
+
+        // Validate that conflicting options aren't set
+        if self.value.is_some() && self.contains.is_some() {
+            return Err("Cannot specify both value and contains options");
+        }
+
+        Ok(QueryOptions {
+            key,
+            value: self.value,
+            contains: self.contains,
+            exists: self.exists,
+            missing: self.missing,
+            style: self.style,
+            count: self.count,
+        })
+    }
+}
+
+impl<'a> QueryOptions<'a> {
+    /// Create a new QueryOptionsBuilder
+    pub fn builder() -> QueryOptionsBuilder<'a> {
+        QueryOptionsBuilder::new()
+    }
+}
+
 pub fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
     if options.value.is_some() && options.contains.is_some() {
-        eprintln!(
-            "{}",
-            "Cannot specify both --value and --contains options".red()
-        );
-        std::process::exit(1);
+        return Err(crate::errors::ObsidianError::InvalidArguments {
+            message: "Cannot specify both --value and --contains options".to_string(),
+        });
     }
 
     if vault.verbose {
@@ -107,10 +206,13 @@ pub fn execute(vault: &Vault, options: QueryOptions<'_>) -> Result<()> {
         }
 
         if has_key {
-            let metadata_value = frontmatter.get(options.key)
-                .ok_or_else(|| crate::errors::ObsidianError::Config(anyhow::anyhow!(
-                    "Key '{}' unexpectedly missing from frontmatter", options.key
-                )))?;
+            let metadata_value =
+                frontmatter
+                    .get(options.key)
+                    .ok_or_else(|| ConfigError::InvalidValue {
+                        field: options.key.to_string(),
+                        value: "missing from frontmatter".to_string(),
+                    })?;
 
             // Value filtering
             if let Some(expected_value) = options.value {
@@ -216,7 +318,7 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
                     let mut obj = serde_json::Map::new();
                     obj.insert(
                         "path".to_string(),
-                        Value::String(result.path.to_string_lossy().to_string()),
+                        Value::String(format!("{}", result.path.display())),
                     );
                     obj.insert(
                         "frontmatter".to_string(),
@@ -235,10 +337,12 @@ fn display_query_results(matches: &[QueryResult], style: OutputStyle, _key: &str
                 })
                 .collect();
 
-            let json_output = serde_json::to_string_pretty(&json_results)
-                .map_err(|e| crate::errors::ObsidianError::Config(anyhow::anyhow!(
-                    "Failed to serialize query results to JSON: {}", e
-                )))?;
+            let json_output = serde_json::to_string_pretty(&json_results).map_err(|e| {
+                ConfigError::InvalidValue {
+                    field: "json_serialization".to_string(),
+                    value: format!("failed: {e}"),
+                }
+            })?;
             println!("{json_output}");
         }
     }

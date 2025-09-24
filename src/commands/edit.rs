@@ -9,7 +9,7 @@ use std::path::Path;
 pub fn execute(vault: &Vault, page_or_path: &Path) -> Result<()> {
     let file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
 
-    launch_editor(&vault.editor, &file_path)?;
+    launch_editor(vault.editor.as_str(), &file_path)?;
 
     // Update the modified timestamp in frontmatter
     frontmatter::update_frontmatter(

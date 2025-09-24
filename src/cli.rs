@@ -1,8 +1,9 @@
-use crate::commands::{add_uid, cat, edit, find, info, journal, ls, meta, new, query, rename, rm, serve};
+use crate::commands::{
+    add_uid, cat, edit, find, info, journal, ls, meta, new, query, rename, rm, serve,
+};
 use crate::config::Config;
 use crate::errors::Result;
 use crate::types::Vault;
-use anyhow::Context;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -155,6 +156,8 @@ pub enum Commands {
     },
     /// Start an MCP (Model Context Protocol) server
     Serve,
+    /// Show version information
+    Version,
 }
 
 #[derive(clap::ValueEnum, Clone, Debug)]
@@ -168,27 +171,35 @@ pub enum OutputStyleArg {
 impl Cli {
     pub async fn run(self) -> Result<()> {
         let config = if let Some(config_path) = &self.config {
-            Config::load_from_path(config_path)
-                .with_context(|| format!("Failed to load config from {}", config_path.display()))?
+            Config::load_from_path(config_path)?
         } else {
-            Config::load().context("Failed to load configuration")?
+            Config::load()?
         };
 
-        let vault = config
-            .resolve_vault_path(self.vault.as_deref())
-            .context("Failed to resolve vault path")?;
+        let vault_path = config.resolve_vault_path(self.vault.as_deref())?;
 
-        let blacklist = self.blacklist.unwrap_or_else(|| config.blacklist.clone());
-        let editor = self.editor.unwrap_or_else(|| config.get_editor());
+        // Use builder pattern to construct Vault, avoiding unnecessary clones
+        let mut vault_builder = Vault::builder()
+            .path(vault_path)
+            .editor(self.editor.unwrap_or_else(|| config.get_editor()))
+            .ident_key(config.ident_key)
+            .journal_template(config.journal_template)
+            .verbose(self.verbose || config.verbose);
 
-        let vault = Vault {
-            path: vault,
-            blacklist,
-            editor,
-            ident_key: config.ident_key,
-            journal_template: config.journal_template,
-            verbose: self.verbose || config.verbose,
-        };
+        // Add blacklist patterns efficiently
+        if let Some(ref patterns) = self.blacklist {
+            vault_builder = vault_builder.blacklist_patterns(patterns.iter().map(|s| s.as_str()));
+        } else {
+            vault_builder =
+                vault_builder.blacklist_patterns(config.blacklist.iter().map(|s| s.as_str()));
+        }
+
+        let vault = vault_builder.build().map_err(|e| {
+            crate::errors::ObsidianError::Config(crate::errors::ConfigError::InvalidValue {
+                field: "vault_construction".to_string(),
+                value: e.to_string(),
+            })
+        })?;
 
         match self.command {
             Commands::AddUid {
@@ -222,15 +233,27 @@ impl Cli {
                 style,
                 count,
             } => {
-                let options = query::QueryOptions {
-                    key: &key,
-                    value: value.as_deref(),
-                    contains: contains.as_deref(),
-                    exists,
-                    missing,
-                    style: style.into(),
-                    count,
-                };
+                let mut options_builder = query::QueryOptions::builder()
+                    .key(&key)
+                    .exists(exists)
+                    .missing(missing)
+                    .style(style.into())
+                    .count(count);
+
+                if let Some(ref v) = value {
+                    options_builder = options_builder.value(v);
+                }
+
+                if let Some(ref c) = contains {
+                    options_builder = options_builder.contains(c);
+                }
+
+                let options = options_builder.build().map_err(|e| {
+                    crate::errors::ObsidianError::InvalidArguments {
+                        message: e.to_string(),
+                    }
+                })?;
+
                 query::execute(&vault, options)
             }
             Commands::Rename {
@@ -243,6 +266,10 @@ impl Cli {
                 force,
             } => rm::execute(&vault, &page_or_path, force),
             Commands::Serve => serve::execute(&vault).await,
+            Commands::Version => {
+                println!("obsidian-cli {}", env!("CARGO_PKG_VERSION"));
+                Ok(())
+            }
         }
     }
 }

@@ -15,11 +15,9 @@ pub fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
 
     let is_overwrite = path.exists();
     if is_overwrite && !force {
-        eprintln!(
-            "{}",
-            format!("File already exists: {}", path.display()).red()
-        );
-        std::process::exit(1);
+        return Err(crate::errors::ObsidianError::FileExists {
+            path: format!("{}", path.display()),
+        });
     }
 
     if is_overwrite && vault.verbose {
@@ -53,14 +51,14 @@ pub fn execute(vault: &Vault, page_or_path: &Path, force: bool) -> Result<()> {
         format!("# {title}\n\n")
     };
 
-    frontmatter::add_default_frontmatter(&mut frontmatter, title, &vault.ident_key);
+    frontmatter::add_default_frontmatter(&mut frontmatter, title, vault.ident_key.as_str());
 
     let serialized = frontmatter::serialize_with_frontmatter(&frontmatter, &content)?;
     std::fs::write(&path, serialized)?;
 
     // Open file in editor (if not using stdin input)
     if atty::is(atty::Stream::Stdin) {
-        launch_editor(&vault.editor, &path)?;
+        launch_editor(vault.editor.as_str(), &path)?;
     }
 
     if vault.verbose {

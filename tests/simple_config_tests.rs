@@ -152,7 +152,7 @@ mod simple_config_tests {
 
         let error = result.unwrap_err();
         let error_message = format!("{}", error);
-        assert!(error_message.contains("Vault path is required"));
+        assert!(error_message.contains("Missing required configuration field: vault"));
     }
 
     #[test]

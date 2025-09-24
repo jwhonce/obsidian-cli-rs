@@ -1,8 +1,7 @@
-use crate::errors::{ObsidianError, Result};
+use crate::errors::{ConfigError, ObsidianError, Result};
 use crate::frontmatter;
 use crate::types::Vault;
 use crate::utils::is_path_blacklisted;
-use anyhow;
 use chrono::Datelike;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -121,10 +120,12 @@ impl ObsidianMcpServer {
                 Ok(_) => {
                     if let Ok(request) = serde_json::from_str::<JsonRpcRequest>(&line) {
                         let response = self.handle_request(request).await;
-                        let response_json = serde_json::to_string(&response)
-                            .map_err(|e| ObsidianError::Config(anyhow::anyhow!(
-                                "Failed to serialize JSON response: {}", e
-                            )))?;
+                        let response_json = serde_json::to_string(&response).map_err(|e| {
+                            ConfigError::InvalidValue {
+                                field: "json_response".to_string(),
+                                value: format!("serialization failed: {e}"),
+                            }
+                        })?;
                         stdout
                             .write_all(response_json.as_bytes())
                             .await
@@ -301,10 +302,7 @@ impl ObsidianMcpServer {
         }
     }
 
-    fn handle_create_note(
-        &self,
-        arguments: &Value,
-    ) -> std::result::Result<Value, JsonRpcError> {
+    fn handle_create_note(&self, arguments: &Value) -> std::result::Result<Value, JsonRpcError> {
         let filename = arguments
             .get("filename")
             .and_then(|v| v.as_str())
@@ -327,7 +325,8 @@ impl ObsidianMcpServer {
         // Normalize filename for metadata
         let normalized_filename = if std::path::Path::new(filename)
             .extension()
-            .is_some_and(|ext| ext.eq_ignore_ascii_case("md")) {
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("md"))
+        {
             filename.to_string()
         } else {
             format!("{filename}.md")
@@ -367,7 +366,7 @@ impl ObsidianMcpServer {
         let final_content = if content.is_empty() {
             // Create with default frontmatter
             let mut fm = HashMap::new();
-            frontmatter::add_default_frontmatter(&mut fm, filename, &self.vault.ident_key);
+            frontmatter::add_default_frontmatter(&mut fm, filename, self.vault.ident_key.as_str());
             frontmatter::serialize_with_frontmatter(&fm, "").map_err(|e| JsonRpcError {
                 code: -32603,
                 message: format!("Failed to create frontmatter: {e}"),
@@ -399,10 +398,7 @@ impl ObsidianMcpServer {
         Ok(json!([text_content]))
     }
 
-    fn handle_find_notes(
-        &self,
-        arguments: &Value,
-    ) -> std::result::Result<Value, JsonRpcError> {
+    fn handle_find_notes(&self, arguments: &Value) -> std::result::Result<Value, JsonRpcError> {
         let term = arguments
             .get("term")
             .and_then(|v| v.as_str())
@@ -490,9 +486,11 @@ impl ObsidianMcpServer {
 
         // Try different file paths
         let mut full_path = self.vault.path.join(filename);
-        if !full_path.exists() && !std::path::Path::new(filename)
-            .extension()
-            .is_some_and(|ext| ext.eq_ignore_ascii_case("md")) {
+        if !full_path.exists()
+            && !std::path::Path::new(filename)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("md"))
+        {
             full_path = self.vault.path.join(format!("{filename}.md"));
         }
 
@@ -545,13 +543,11 @@ impl ObsidianMcpServer {
     }
 
     fn handle_get_vault_info(&self) -> std::result::Result<Value, JsonRpcError> {
-        let vault_info = self
-            .get_vault_info_for_mcp()
-            .map_err(|e| JsonRpcError {
-                code: -32603,
-                message: format!("Failed to get vault info: {e}"),
-                data: None,
-            })?;
+        let vault_info = self.get_vault_info_for_mcp().map_err(|e| JsonRpcError {
+            code: -32603,
+            message: format!("Failed to get vault info: {e}"),
+            data: None,
+        })?;
 
         // Format like Python version
         let file_types_section = if !vault_info.file_type_stats.is_empty() {
@@ -630,7 +626,8 @@ impl ObsidianMcpServer {
             })?;
 
         if uri.starts_with("obsidian://vault/") {
-            let vault_path = uri.strip_prefix("obsidian://vault/")
+            let vault_path = uri
+                .strip_prefix("obsidian://vault/")
                 .ok_or_else(|| JsonRpcError {
                     code: -32602,
                     message: "Invalid vault URI format".to_string(),
@@ -724,7 +721,7 @@ impl ObsidianMcpServer {
         }
 
         let journal_path = crate::utils::format_journal_template(
-            &self.vault.journal_template,
+            self.vault.journal_template.as_str(),
             &crate::types::TemplateVars {
                 year: chrono::Utc::now().year(),
                 month: chrono::Utc::now().month(),

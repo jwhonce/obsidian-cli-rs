@@ -31,16 +31,10 @@ pub fn execute(
             if let Some(v) = frontmatter.get(k) {
                 println!("{}: {}", k, format_value(v));
             } else {
-                eprintln!(
-                    "{}",
-                    format!(
-                        "Frontmatter metadata '{}' not found in '{}'",
-                        k,
-                        page_or_path.display()
-                    )
-                    .red()
-                );
-                std::process::exit(1);
+                return Err(crate::errors::ObsidianError::FrontmatterKeyNotFound {
+                    key: k.to_string(),
+                    file: format!("{}", page_or_path.display()),
+                });
             }
         }
         // Update key with value

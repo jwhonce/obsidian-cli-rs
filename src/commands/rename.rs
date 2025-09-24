@@ -1,16 +1,20 @@
-use crate::errors::{ObsidianError, Result};
+use crate::errors::{ConfigError, ObsidianError, Result};
 use crate::types::Vault;
 use crate::utils::{is_path_blacklisted, wrap_filename};
-use anyhow;
 use colored::Colorize;
 use regex::Regex;
 use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 
-pub fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_links: bool) -> Result<()> {
+pub fn execute(
+    vault: &Vault,
+    page_or_path: &Path,
+    new_name: &str,
+    update_links: bool,
+) -> Result<()> {
     let old_file_path = crate::resolve_page_or_path!(vault, page_or_path)?;
-    
+
     // Validate that the source file exists
     if !old_file_path.exists() {
         return Err(ObsidianError::FileNotFound {
@@ -20,7 +24,7 @@ pub fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_links:
 
     // Construct the new file path
     let mut new_file_path = old_file_path.clone();
-    
+
     // Determine if new_name is just a filename or a full path
     let new_name_path = Path::new(new_name);
     if let Some(parent) = new_name_path.parent() {
@@ -35,19 +39,19 @@ pub fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_links:
         // new_name is just a filename, keep in same directory
         new_file_path.set_file_name(new_name);
     }
-    
+
     // Ensure the new filename has .md extension if the original did
-    if old_file_path.extension().is_some_and(|ext| ext == "md") && 
-       new_file_path.extension().is_none_or(|ext| ext != "md") {
+    if old_file_path.extension().is_some_and(|ext| ext == "md")
+        && new_file_path.extension().is_none_or(|ext| ext != "md")
+    {
         new_file_path.set_extension("md");
     }
 
     // Check if target file already exists
     if new_file_path.exists() {
-        return Err(ObsidianError::Config(anyhow::anyhow!(
-            "Target file already exists: {}", 
-            new_file_path.display()
-        )));
+        return Err(ObsidianError::FileExists {
+            path: format!("{}", new_file_path.display()),
+        });
     }
 
     // Create parent directories if they don't exist
@@ -59,20 +63,30 @@ pub fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_links:
     let old_name = old_file_path
         .file_stem()
         .and_then(|s| s.to_str())
-        .ok_or_else(|| ObsidianError::Config(anyhow::anyhow!("Invalid old filename")))?;
-    
+        .ok_or_else(|| ConfigError::InvalidValue {
+            field: "old_filename".to_string(),
+            value: "invalid or empty".to_string(),
+        })?;
+
     let new_name_stem = new_file_path
         .file_stem()
         .and_then(|s| s.to_str())
-        .ok_or_else(|| ObsidianError::Config(anyhow::anyhow!("Invalid new filename")))?;
+        .ok_or_else(|| ConfigError::InvalidValue {
+            field: "new_filename".to_string(),
+            value: "invalid or empty".to_string(),
+        })?;
 
     // Perform the rename operation
     fs::rename(&old_file_path, &new_file_path)?;
 
-    println!("{} Renamed: {} -> {}", 
-             "✓".green().bold(), 
-             wrap_filename(&old_file_path.display().to_string(), 40),
-             wrap_filename(&new_file_path.display().to_string(), 40));
+    let old_display = old_file_path.display().to_string();
+    let new_display = new_file_path.display().to_string();
+    println!(
+        "{} Renamed: {} -> {}",
+        "✓".green().bold(),
+        wrap_filename(&old_display, 40),
+        wrap_filename(&new_display, 40)
+    );
 
     // Update wiki links if requested
     if update_links {
@@ -83,22 +97,43 @@ pub fn execute(vault: &Vault, page_or_path: &Path, new_name: &str, update_links:
 }
 
 fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Result<()> {
-    println!("{} Searching for wiki links to update...", "🔍".blue().bold());
-    
+    println!(
+        "{} Searching for wiki links to update...",
+        "🔍".blue().bold()
+    );
+
     // Create regex patterns for different wiki link formats
     let patterns = vec![
         // [[old_name]]
-        Regex::new(&format!(r"\[\[{}\]\]", regex::escape(old_name)))
-            .map_err(|e| ObsidianError::Config(anyhow::anyhow!("Regex error: {}", e)))?,
+        Regex::new(&format!(r"\[\[{}\]\]", regex::escape(old_name))).map_err(|e| {
+            ConfigError::InvalidValue {
+                field: "regex_pattern".to_string(),
+                value: format!("compilation failed: {e}"),
+            }
+        })?,
         // [[old_name|display text]]
-        Regex::new(&format!(r"\[\[{}(\|[^\]]*)\]\]", regex::escape(old_name)))
-            .map_err(|e| ObsidianError::Config(anyhow::anyhow!("Regex error: {}", e)))?,
+        Regex::new(&format!(r"\[\[{}(\|[^\]]*)\]\]", regex::escape(old_name))).map_err(|e| {
+            ConfigError::InvalidValue {
+                field: "regex_pattern".to_string(),
+                value: format!("compilation failed: {e}"),
+            }
+        })?,
         // [[old_name#section]]
-        Regex::new(&format!(r"\[\[{}(#[^\]]*)\]\]", regex::escape(old_name)))
-            .map_err(|e| ObsidianError::Config(anyhow::anyhow!("Regex error: {}", e)))?,
+        Regex::new(&format!(r"\[\[{}(#[^\]]*)\]\]", regex::escape(old_name))).map_err(|e| {
+            ConfigError::InvalidValue {
+                field: "regex_pattern".to_string(),
+                value: format!("compilation failed: {e}"),
+            }
+        })?,
         // [[old_name#section|display text]]
-        Regex::new(&format!(r"\[\[{}(#[^\]]*\|[^\]]*)\]\]", regex::escape(old_name)))
-            .map_err(|e| ObsidianError::Config(anyhow::anyhow!("Regex error: {}", e)))?,
+        Regex::new(&format!(
+            r"\[\[{}(#[^\]]*\|[^\]]*)\]\]",
+            regex::escape(old_name)
+        ))
+        .map_err(|e| ConfigError::InvalidValue {
+            field: "regex_pattern".to_string(),
+            value: format!("compilation failed: {e}"),
+        })?,
     ];
 
     let mut files_updated = 0;
@@ -114,25 +149,26 @@ fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Result<()
             if let Ok(relative_path) = entry.path().strip_prefix(&vault.path) {
                 if !is_path_blacklisted(relative_path, &vault.blacklist) {
                     let file_path = entry.path();
-                    
+
                     // Read file contents
                     let content = fs::read_to_string(file_path)?;
-                    
+
                     let mut updated_content = content.clone();
                     let mut file_links_updated = 0;
-                    
+
                     // Apply each pattern replacement
                     for pattern in &patterns {
-                        let new_content = pattern.replace_all(&updated_content, |caps: &regex::Captures| {
-                            if let Some(suffix) = caps.get(1) {
-                                // Handle cases with additional content (|display, #section, etc.)
-                                format!("[[{}{}]]", new_name, suffix.as_str())
-                            } else {
-                                // Simple [[old_name]] -> [[new_name]]
-                                format!("[[{new_name}]]")
-                            }
-                        });
-                        
+                        let new_content =
+                            pattern.replace_all(&updated_content, |caps: &regex::Captures| {
+                                if let Some(suffix) = caps.get(1) {
+                                    // Handle cases with additional content (|display, #section, etc.)
+                                    format!("[[{}{}]]", new_name, suffix.as_str())
+                                } else {
+                                    // Simple [[old_name]] -> [[new_name]]
+                                    format!("[[{new_name}]]")
+                                }
+                            });
+
                         // Count replacements made by this pattern
                         if new_content != updated_content {
                             let old_count = pattern.find_iter(&updated_content).count();
@@ -140,18 +176,20 @@ fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Result<()
                             updated_content = new_content.to_string();
                         }
                     }
-                    
+
                     // Write back the file if any changes were made
                     if updated_content != content {
                         fs::write(file_path, updated_content)?;
-                        
+
                         files_updated += 1;
                         total_links_updated += file_links_updated;
-                        
-                        println!("  {} Updated {} link(s) in {}", 
-                                "✓".green(), 
-                                file_links_updated.to_string().yellow(),
-                                wrap_filename(&relative_path.display().to_string(), 40));
+
+                        println!(
+                            "  {} Updated {} link(s) in {}",
+                            "✓".green(),
+                            file_links_updated.to_string().yellow(),
+                            wrap_filename(&relative_path.display().to_string(), 40)
+                        );
                     }
                 }
             }
@@ -159,12 +197,18 @@ fn update_wiki_links(vault: &Vault, old_name: &str, new_name: &str) -> Result<()
     }
 
     if files_updated > 0 {
-        println!("{} Updated {} wiki link(s) across {} file(s)", 
-                "✅".green().bold(),
-                total_links_updated.to_string().yellow().bold(),
-                files_updated.to_string().yellow().bold());
+        println!(
+            "{} Updated {} wiki link(s) across {} file(s)",
+            "✅".green().bold(),
+            total_links_updated.to_string().yellow().bold(),
+            files_updated.to_string().yellow().bold()
+        );
     } else {
-        println!("{} No wiki links found that reference '{}'", "ℹ️".blue(), old_name.yellow());
+        println!(
+            "{} No wiki links found that reference '{}'",
+            "ℹ️".blue(),
+            old_name.yellow()
+        );
     }
 
     Ok(())

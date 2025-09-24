@@ -17,7 +17,9 @@ pub mod mcp_server;
 // Re-export commonly used types
 pub use cli::Cli;
 pub use config::Config;
-pub use errors::{ObsidianError, Result};
+pub use errors::{ConfigError, ObsidianError, Result, TemplateError, VaultError};
 // Re-export frontmatter functions for backward compatibility
 pub use frontmatter::*;
-pub use types::{TemplateVars, Vault, VaultInfo};
+pub use types::{
+    BlacklistPattern, EditorCommand, IdentKey, JournalTemplate, TemplateVars, Vault, VaultInfo,
+};

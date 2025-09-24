@@ -9,21 +9,18 @@ use std::path::PathBuf;
 
 pub fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
     let target_date = if let Some(date_str) = date {
-        let naive_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
-            .map_err(|_| {
-                ObsidianError::TemplateFormatting(
-                    "Invalid date format. Use ISO format YYYY-MM-DD.".to_string(),
-                )
-            })?;
-        
-        let naive_datetime = naive_date.and_hms_opt(0, 0, 0)
-            .ok_or_else(|| {
-                ObsidianError::TemplateFormatting(
-                    "Failed to construct datetime from date".to_string(),
-                )
-            })?;
-        
-        naive_datetime.and_local_timezone(Local)
+        let naive_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d").map_err(|_| {
+            ObsidianError::TemplateFormatting(
+                "Invalid date format. Use ISO format YYYY-MM-DD.".to_string(),
+            )
+        })?;
+
+        let naive_datetime = naive_date.and_hms_opt(0, 0, 0).ok_or_else(|| {
+            ObsidianError::TemplateFormatting("Failed to construct datetime from date".to_string())
+        })?;
+
+        naive_datetime
+            .and_local_timezone(Local)
             .single()
             .ok_or_else(|| {
                 ObsidianError::TemplateFormatting(
@@ -35,7 +32,8 @@ pub fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
     };
 
     let template_vars = get_template_vars(target_date);
-    let journal_path_str = format_journal_template(&vault.journal_template, &template_vars)?;
+    let journal_path_str =
+        format_journal_template(vault.journal_template.as_str(), &template_vars)?;
     let mut page_path = PathBuf::from(journal_path_str);
     page_path.set_extension("md");
 
@@ -60,7 +58,7 @@ pub fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
             .and_then(|s| s.to_str())
             .unwrap_or("Journal Entry");
         let mut frontmatter = HashMap::new();
-        frontmatter::add_default_frontmatter(&mut frontmatter, title, &vault.ident_key);
+        frontmatter::add_default_frontmatter(&mut frontmatter, title, vault.ident_key.as_str());
 
         let content = format!("# {title}\n\n");
         let serialized = frontmatter::serialize_with_frontmatter(&frontmatter, &content)?;
@@ -77,7 +75,7 @@ pub fn execute(vault: &Vault, date: Option<&str>) -> Result<()> {
     }
 
     // Launch editor
-    launch_editor(&vault.editor, &full_path)?;
+    launch_editor(vault.editor.as_str(), &full_path)?;
 
     Ok(())
 }

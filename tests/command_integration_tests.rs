@@ -20,10 +20,12 @@ mod command_integration_tests {
 
         Vault {
             path: temp_dir.path().to_path_buf(),
-            blacklist: vec![".obsidian".to_string(), "*.tmp".to_string()],
-            editor: "true".to_string(), // Mock editor that always succeeds
-            ident_key: "uid".to_string(),
-            journal_template: "Calendar/{year}/{month:02}/{year}-{month:02}-{day:02}".to_string(),
+            blacklist: vec![".obsidian".to_string().into(), "*.tmp".to_string().into()],
+            editor: "true".to_string().into(), // Mock editor that always succeeds
+            ident_key: "uid".to_string().into(),
+            journal_template: "Calendar/{year}/{month:02}/{year}-{month:02}-{day:02}"
+                .to_string()
+                .into(),
             verbose: false,
         }
     }

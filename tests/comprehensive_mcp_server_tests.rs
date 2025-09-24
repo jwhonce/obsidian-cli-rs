@@ -14,10 +14,12 @@ fn create_test_vault_for_mcp(temp_dir: &TempDir) -> Vault {
 
     Vault {
         path: vault_path.to_path_buf(),
-        blacklist: vec![".obsidian".to_string()],
-        editor: "true".to_string(), // Safe mock editor
-        ident_key: "uid".to_string(),
-        journal_template: "Calendar/{year}/{month:02}/{year}-{month:02}-{day:02}".to_string(),
+        blacklist: vec![".obsidian".to_string().into()],
+        editor: "true".to_string().into(), // Safe mock editor
+        ident_key: "uid".to_string().into(),
+        journal_template: "Calendar/{year}/{month:02}/{year}-{month:02}-{day:02}"
+            .to_string()
+            .into(),
         verbose: false,
     }
 }

@@ -1,8 +1,8 @@
 use crate::errors::{ObsidianError, Result};
 use crate::frontmatter;
 use crate::template;
-use crate::types::{FileTypeStat, TemplateVars, Vault, VaultInfo};
-use chrono::{DateTime, Datelike, Local};
+use crate::types::{BlacklistPattern, FileTypeStat, TemplateVars, Vault, VaultInfo};
+use chrono::{DateTime, Local};
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
 use serde_json::Value;
@@ -11,18 +11,18 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use walkdir::WalkDir;
 
-pub fn is_path_blacklisted(path: &Path, blacklist: &[String]) -> bool {
+pub fn is_path_blacklisted(path: &Path, blacklist: &[BlacklistPattern]) -> bool {
     let path_str = path.to_string_lossy();
     blacklist.iter().any(|pattern| {
         if pattern.contains('*') {
             // Handle glob patterns
-            glob_match(pattern, &path_str)
+            glob_match(pattern.as_str(), &path_str)
         } else {
             // Handle simple patterns - check both prefix and path component matching
-            path_str.starts_with(pattern)
+            path_str.starts_with(pattern.as_str())
                 || path
                     .components()
-                    .any(|component| component.as_os_str().to_string_lossy() == *pattern)
+                    .any(|component| component.as_os_str().to_string_lossy() == pattern.as_str())
         }
     })
 }
@@ -76,7 +76,7 @@ pub fn find_matching_files(
                     .path()
                     .strip_prefix(vault)
                     .map_err(|_| ObsidianError::FileNotFound {
-                        path: entry.path().to_string_lossy().to_string(),
+                        path: format!("{}", entry.path().display()),
                     })?;
 
             // Check filename match
@@ -147,15 +147,11 @@ pub fn resolve_page_path(page_or_path: &Path, vault: &Path) -> Result<PathBuf> {
 }
 
 pub fn get_template_vars(date: DateTime<Local>) -> TemplateVars {
-    TemplateVars {
-        year: date.year(),
-        month: date.month(),
-        day: date.day(),
-        month_name: date.format("%B").to_string(),
-        month_abbr: date.format("%b").to_string(),
-        weekday: date.format("%A").to_string(),
-        weekday_abbr: date.format("%a").to_string(),
-    }
+    // Use the builder pattern for more efficient construction
+    TemplateVars::builder()
+        .from_chrono_datetime(&date)
+        .build()
+        .expect("Template vars construction should never fail with valid date")
 }
 
 pub fn format_journal_template(template_str: &str, vars: &TemplateVars) -> Result<String> {
@@ -181,7 +177,7 @@ pub fn get_vault_info(vault: &Vault) -> Result<VaultInfo> {
                 .path()
                 .strip_prefix(&vault.path)
                 .map_err(|_| ObsidianError::FileNotFound {
-                    path: entry.path().to_string_lossy().to_string(),
+                    path: format!("{}", entry.path().display()),
                 })?;
 
         if is_path_blacklisted(relative_path, &vault.blacklist) {
@@ -221,19 +217,19 @@ pub fn get_vault_info(vault: &Vault) -> Result<VaultInfo> {
 
     let now = Local::now();
     let template_vars = get_template_vars(now);
-    let journal_path = format_journal_template(&vault.journal_template, &template_vars)?;
+    let journal_path = format_journal_template(vault.journal_template.as_str(), &template_vars)?;
 
     Ok(VaultInfo {
-        vault_path: vault.path.clone(),
+        vault_path: vault.path.clone(), // Unavoidable clone for owned value
         total_files,
         total_directories,
         usage_files,
         usage_directories,
         file_type_stats,
         markdown_files,
-        blacklist: vault.blacklist.clone(),
-        editor: vault.editor.clone(),
-        journal_template: vault.journal_template.clone(),
+        blacklist: vault.blacklist.clone(), // Unavoidable clone for owned value
+        editor: vault.editor.clone(),       // Unavoidable clone for owned value
+        journal_template: vault.journal_template.clone(), // Unavoidable clone for owned value
         journal_path,
         verbose: vault.verbose,
         version: env!("CARGO_PKG_VERSION").to_string(),
@@ -257,9 +253,9 @@ pub fn launch_editor(editor: &str, file_path: &Path) -> Result<()> {
 }
 
 /// Wrap filename at specified width, preferring to break at path separators
-pub fn wrap_filename(filename: &str, max_width: usize) -> String {
+pub fn wrap_filename(filename: &str, max_width: usize) -> std::borrow::Cow<'_, str> {
     if filename.len() <= max_width {
-        return filename.to_string();
+        return std::borrow::Cow::Borrowed(filename);
     }
 
     let mut result = String::new();
@@ -302,7 +298,7 @@ pub fn wrap_filename(filename: &str, max_width: usize) -> String {
         result.push_str(&current_line);
     }
 
-    result
+    std::borrow::Cow::Owned(result)
 }
 
 /// Extract created and modified dates from frontmatter or filesystem
